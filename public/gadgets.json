@@ -1,0 +1,142 @@
+[
+  {
+    "name": "pop-er0",
+    "addr": "121A8",
+    "desc": "赋值 ER0",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-er2",
+    "addr": "18814",
+    "desc": "赋值 ER2",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-er4",
+    "addr": "1827C",
+    "desc": "赋值 ER4",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-er6",
+    "addr": "139EE",
+    "desc": "赋值 ER6",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-er8",
+    "addr": "0C06C",
+    "desc": "赋值 ER8",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-er10",
+    "addr": "0C218",
+    "desc": "赋值 ER10",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-er12",
+    "addr": "21532",
+    "desc": "赋值 ER12",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-er14",
+    "addr": "20D72",
+    "desc": "赋值 ER14",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-xr0",
+    "addr": "16134",
+    "desc": "赋值 XR0",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-xr4",
+    "addr": "16D78",
+    "desc": "赋值 XR4",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-xr8",
+    "addr": "13846",
+    "desc": "赋值 XR8",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-xr12",
+    "addr": "1D52C",
+    "desc": "赋值 XR12",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-qr0",
+    "addr": "130E2",
+    "desc": "赋值 QR0",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-qr8",
+    "addr": "13236",
+    "desc": "赋值 QR8",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "pop-all",
+    "addr": "2237C",
+    "desc": "赋值 QR8, QR0",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "rt-fix",
+    "addr": "2B948",
+    "desc": "修复 RT 返回问题",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "mem-add",
+    "addr": "08F24",
+    "desc": "内存地址加法 [ER8] += ER2\nER8：内存地址\nER2：偏移量",
+    "rt": false,
+    "pops": ["XR8"]
+  },
+  {
+    "name": "screen-on",
+    "addr": "09310",
+    "desc": "开启屏幕显示",
+    "rt": true,
+    "pops": []
+  },
+  {
+    "name": "screen-clear",
+    "addr": "07F00",
+    "desc": "清除屏幕缓冲区",
+    "rt": false,
+    "pops": []
+  },
+  {
+    "name": "print",
+    "addr": "0821E",
+    "desc": "打印一行文本内容（基层函数）\nR0：x轴偏移\nR1：y轴偏移\nR2：文本内容指针",
+    "rt": false,
+    "pops": []
+  }
+]
