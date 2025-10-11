@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import style from './App.module.scss';
+import style from './styles/HexPanel.module.scss';
 
 function HexDisplay({
   hexDisplay,
@@ -317,10 +317,7 @@ export default function HexPanel({
         const secondCharPos =
           secondCharIndex < mapping.length ? mapping[secondCharIndex] : null;
 
-        byteMappingRow.push({
-          firstChar: firstCharPos,
-          secondChar: secondCharPos,
-        });
+        byteMappingRow.push([firstCharPos, secondCharPos]);
       }
 
       rows.push(bytes);
@@ -365,7 +362,6 @@ export default function HexPanel({
             className={style.addressInput}
             value={leftStartAddress}
             onChange={handleLeftAddressChange}
-            placeholder="输入左侧起始地址"
           />
         </div>
         <div className={style.addressInputContainer}>
@@ -374,13 +370,12 @@ export default function HexPanel({
             className={style.addressInput}
             value={rightStartAddress}
             onChange={handleRightAddressChange}
-            placeholder="输入右侧起始地址"
           />
         </div>
         <button
           className={style.copyButton}
           onClick={copyHexContent}
-          title="复制全部十六进制内容 (Ctrl+Shift+C)"
+          title="复制全部十六进制内容 (Ctrl+Alt+C)"
         >
           {copyBtnText}
         </button>

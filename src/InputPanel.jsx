@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import style from './App.module.scss';
+import style from './styles/InputPanel.module.scss';
 
 export default function InputPanel({
   input,
@@ -23,71 +23,77 @@ export default function InputPanel({
   });
 
   // 生成高亮HTML
-  const generateHighlightedHTML = useCallback((code) => {
-    if (!code) return [];
+  const generateHighlightedHTML = useCallback(
+    (code) => {
+      if (!code) return [];
 
-    const lines = code.split('\n');
-    const htmlLines = [];
+      const lines = code.split('\n');
+      const htmlLines = [];
 
-    const newSegment = (text, type) =>
-      `<span class="${type.map((t) => style[t]).join(' ')}">${text}</span>`;
+      const newSegment = (text, type) =>
+        `<span class="${type.map((t) => style[t]).join(' ')}">${text}</span>`;
 
-    lines.forEach((line, lineIndex) => {
-      const htmlLine = [];
+      lines.forEach((line, lineIndex) => {
+        const htmlLine = [];
 
-      if (!line) htmlLines.push(' ');
-
-      // 拆分行尾的注释 (//...)
-      const [, beforeComment, comment = ''] = line.match(
-        /^([^\/]*)(\/\/.*)?$/
-      ) || [, line];
-
-      // 拆分 gadget 与非 gadget 片段
-      const parts = beforeComment.split(/(#[^;]*;|\s+)/);
-      parts.forEach((part) => {
-        if (!part) return;
-
-        // 如果是 gadget 片段
-        if (part.startsWith('#')) {
-          // 如果是未闭合的 gadget
-          if (!part.endsWith(';')) {
-            htmlLine.push(newSegment(part, ['gadget', 'unclosed']));
-            return;
-          }
-
-          if (
-            part.slice(1, 2) === '-'
-              ? gadgets.find((g) => g.name === part.slice(2, -1))
-              : gadgets.find((g) => g.name === part.slice(1, -1))
-          ) {
-            htmlLine.push(newSegment(part, ['gadget']));
-          } else {
-            htmlLine.push(newSegment(part, ['gadget', 'undefined']));
-          }
+        if (!line) {
+          htmlLines.push(`<div data-line-index="${lineIndex}"> </div>`);
           return;
         }
 
-        // 剩下的再按十六进制切分
-        const hexParts = part.split(/([0-9a-fA-F\s]+)/);
-        hexParts.forEach((sub) => {
-          if (!sub) return;
-          const type = /^[0-9a-fA-F\s]+$/.test(sub) ? ['code'] : ['comment'];
-          htmlLine.push(newSegment(sub, type));
+        // 拆分行尾的注释 (//...)
+        const [, beforeComment, comment = ''] = line.match(
+          /^([^\/]*)(\/\/.*)?$/
+        ) || [, line];
+
+        // 拆分 gadget 与非 gadget 片段
+        const parts = beforeComment.split(/(#[^;]*;|\s+)/);
+        parts.forEach((part) => {
+          if (!part) return;
+
+          // 如果是 gadget 片段
+          if (part.startsWith('#')) {
+            // 如果是未闭合的 gadget
+            if (!part.endsWith(';')) {
+              htmlLine.push(newSegment(part, ['gadget', 'unclosed']));
+              return;
+            }
+
+            if (
+              part.slice(1, 2) === '-'
+                ? gadgets.find((g) => g.name === part.slice(2, -1))
+                : gadgets.find((g) => g.name === part.slice(1, -1))
+            ) {
+              htmlLine.push(newSegment(part, ['gadget']));
+            } else {
+              htmlLine.push(newSegment(part, ['gadget', 'undefined']));
+            }
+            return;
+          }
+
+          // 剩下的再按十六进制切分
+          const hexParts = part.split(/([0-9a-fA-F\s]+)/);
+          hexParts.forEach((sub) => {
+            if (!sub) return;
+            const type = /^[0-9a-fA-F\s]+$/.test(sub) ? ['code'] : ['comment'];
+            htmlLine.push(newSegment(sub, type));
+          });
         });
+
+        // 把整段“//xxx”追加为注释
+        if (comment) {
+          htmlLine.push(newSegment(comment, ['comment']));
+        }
+
+        htmlLines.push(
+          `<div data-line-index="${lineIndex}">${htmlLine.join('')}</div>`
+        );
       });
 
-      // 把整段“//xxx”追加为注释
-      if (comment) {
-        htmlLine.push(newSegment(comment, ['comment']));
-      }
-
-      htmlLines.push(
-        `<div data-line-index="${lineIndex}">${htmlLine.join('')}</div>`
-      );
-    });
-
-    return htmlLines.join('');
-  }, [gadgets]);
+      return htmlLines.join('');
+    },
+    [gadgets]
+  );
 
   // 滚动输入框到选中位置
   const scrollTextareaToSelection = useCallback(
@@ -121,50 +127,22 @@ export default function InputPanel({
 
   const findByte = useCallback(
     (start, end) => {
-      // 遍历byteToInputMap查找与选中范围重叠的字节
       if (!byteToInputMap || !Array.isArray(byteToInputMap)) {
         return null;
       }
 
-      // 遍历每一行
       for (let rowIndex = 0; rowIndex < byteToInputMap.length; rowIndex++) {
         const row = byteToInputMap[rowIndex];
         if (!row) continue;
 
-        // 遍历每个字节
         for (let byteIndex = 0; byteIndex < row.length; byteIndex++) {
           const mapping = row[byteIndex];
           if (!mapping) continue;
 
-          const firstChar = mapping.firstChar;
-          const secondChar = mapping.secondChar;
-
-          // 检查第一个字符是否在选中范围内
-          if (
-            firstChar &&
-            firstChar.inputIndex >= start &&
-            firstChar.inputIndex < end
-          ) {
-            return { rowIndex, byteIndex };
-          }
-
-          // 检查第二个字符是否在选中范围内
-          if (
-            secondChar &&
-            secondChar.inputIndex >= start &&
-            secondChar.inputIndex < end
-          ) {
-            return { rowIndex, byteIndex };
-          }
-
-          // 检查选中范围是否在两个字符之间
-          if (
-            firstChar &&
-            secondChar &&
-            firstChar.inputIndex <= start &&
-            secondChar.inputIndex >= end - 1
-          ) {
-            return { rowIndex, byteIndex };
+          for (const char of mapping) {
+            if (char && char.inputIndex >= start && char.inputIndex < end) {
+              return { rowIndex, byteIndex };
+            }
           }
         }
       }
@@ -237,6 +215,7 @@ export default function InputPanel({
     (e) => {
       if (highlightedContentRef.current && textareaRef) {
         highlightedContentRef.current.scrollTop = e.target.scrollTop;
+        highlightedContentRef.current.scrollLeft = e.target.scrollLeft;
       }
     },
     [textareaRef]
@@ -287,8 +266,6 @@ export default function InputPanel({
         })
         .filter((g) => g.name.toLowerCase().includes(query.toLowerCase()));
 
-      console.log(filteredSuggestions);
-
       setSuggestions(filteredSuggestions);
       setAutocompleteVisible(filteredSuggestions.length > 0);
       setSelectedSuggestionIndex(0);
@@ -307,6 +284,8 @@ export default function InputPanel({
     const div = document.createElement('div');
     const style = window.getComputedStyle(textarea);
     [
+      'width',
+      'overflow',
       'fontFamily',
       'fontSize',
       'fontWeight',
@@ -322,7 +301,6 @@ export default function InputPanel({
     });
     div.style.position = 'absolute';
     div.style.visibility = 'hidden';
-    div.style.width = style.width;
 
     const text = textarea.value.substring(0, cursorPos);
     div.textContent = text;
@@ -379,10 +357,6 @@ export default function InputPanel({
     }
   };
 
-  const placeholder = `输入ROP代码...
-
-使用#xxx;格式插入gadget，名称前添加“-”将避免产生00`;
-
   return (
     <div className={style.inputPanel} ref={editorRef}>
       <div className={style.codeEditorContainer}>
@@ -406,7 +380,7 @@ export default function InputPanel({
           onKeyUp={handleKeyUp}
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
-          placeholder={placeholder}
+          placeholder="输入ROP代码..."
           className={style.codeInput}
           spellCheck="false"
         />
