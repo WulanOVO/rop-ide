@@ -9,13 +9,14 @@ export default function InputPanel({
   selectedInput,
   onClearSelection,
   gadgets,
+  showAutocomplete,
+  setShowAutocomplete,
 }) {
   const [textareaRef, setTextareaRef] = useState(null);
   const highlightedContentRef = useRef(null);
   const editorRef = useRef(null);
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 });
   const [suggestions, setSuggestions] = useState([]);
-  const [autocompleteVisible, setAutocompleteVisible] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [autocompletePosition, setAutocompletePosition] = useState({
     top: 0,
@@ -267,13 +268,13 @@ export default function InputPanel({
         .filter((g) => g.name.toLowerCase().includes(query.toLowerCase()));
 
       setSuggestions(filteredSuggestions);
-      setAutocompleteVisible(filteredSuggestions.length > 0);
+      setShowAutocomplete(filteredSuggestions.length > 0);
       setSelectedSuggestionIndex(0);
 
       const { top, left } = getCursorPosition(textareaRef, cursorPos);
       setAutocompletePosition({ top, left });
     } else {
-      setAutocompleteVisible(false);
+      setShowAutocomplete(false);
     }
   };
 
@@ -332,12 +333,12 @@ export default function InputPanel({
       textareaRef.setSelectionRange(startIndex, cursorPos);
       document.execCommand('insertText', false, `#${suggestion.name};`);
 
-      setAutocompleteVisible(false);
+      setShowAutocomplete(false);
     }
   };
 
   const handleKeyDown = (e) => {
-    if (autocompleteVisible) {
+    if (showAutocomplete) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedSuggestionIndex((prevIndex) =>
@@ -352,7 +353,7 @@ export default function InputPanel({
           handleSuggestionSelect(suggestions[selectedSuggestionIndex]);
         }
       } else if (e.key === 'Escape') {
-        setAutocompleteVisible(false);
+        setShowAutocomplete(false);
       }
     }
   };
@@ -384,7 +385,7 @@ export default function InputPanel({
           className={style.codeInput}
           spellCheck="false"
         />
-        {autocompleteVisible && (
+        {showAutocomplete && (
           <AutocompletePanel
             suggestions={suggestions}
             onSelect={handleSuggestionSelect}
@@ -434,10 +435,9 @@ function AutocompletePanel({
         >
           <span className={style.name}>{suggestion.name}</span>
           <span className={style.addr}>{suggestion.addr}</span>
-          {suggestion.rt && <span className={style.rtTag}>RT</span>}
-          {suggestion.pops.map((pop) => (
-            <span key={pop} className={style.popTag}>
-              {pop}
+          {suggestion.tags.map((tag) => (
+            <span key={tag.name} className={`${style.tag} ${style[tag.type]}`}>
+              {tag.name}
             </span>
           ))}
           <span className={style.desc}>{suggestion.desc?.split('\n')[0]}</span>

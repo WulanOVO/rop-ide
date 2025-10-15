@@ -1,0 +1,405 @@
+@mixin button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow: auto;
+}
+
+.managerPanel {
+  background: #f8f9fa;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+
+  .header {
+    padding: 20px;
+    background: #e9ecef;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h2 {
+      margin: 0;
+      color: #343a40;
+    }
+
+    .panelActions {
+      display: flex;
+      gap: 10px;
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+    }
+  }
+
+  .gadgetList {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+  }
+}
+
+.gadgetCard {
+  position: relative;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  .cardActions {
+    display: flex;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    gap: 5px;
+
+    .iconButton {
+      @include button;
+      background: none;
+      padding: 5px;
+      line-height: 0;
+      border: 1px solid transparent;
+
+      &:hover {
+        background-color: #f1f3f5;
+        border-color: #adb5bd;
+      }
+
+      .icon {
+        display: block;
+      }
+    }
+
+    // 编辑模式下的操作按钮
+    .saveButton,
+    .cancelButton {
+      @include button;
+      padding: 5px;
+      line-height: 0;
+
+      .icon {
+        display: block;
+      }
+    }
+
+    .saveButton {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .cancelButton {
+      background-color: #6c757d;
+      color: white;
+    }
+  }
+
+  .cardHeader {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 5px;
+
+    .gadgetName {
+      margin-right: 10px;
+      color: #343a40;
+    }
+
+    .nameInput {
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-weight: bold;
+      box-sizing: border-box;
+      font-family: 'consolas', monospace;
+
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+      }
+    }
+
+    .tagsContainer {
+      display: flex;
+      flex: 1;
+      gap: 5px;
+      flex-wrap: wrap;
+      align-items: center;
+
+      .tag {
+        padding: 1px 3px;
+        border-radius: 5px;
+        font-size: 0.7rem;
+        font-weight: bold;
+
+        &.warn {
+          color: #e67700;
+          background-color: #ffe8cc;
+          border: 2px solid #ffa94d;
+        }
+
+        &.info {
+          color: #0c8599;
+          background-color: #c5f6fa;
+          border: 2px solid #3bc9db;
+        }
+
+        &.tagWithRemove {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+
+          .removeTagButton {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            line-height: 0;
+
+            .icon {
+              display: block;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .gadgetAddress {
+    display: flex;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 10px;
+    font-size: 0.85em;
+    color: #6c757d;
+    font-family: 'consolas', monospace;
+    font-style: italic;
+  }
+
+  .gadgetDesc {
+    font-size: 0.9em;
+    color: #666;
+    white-space: pre-line;
+  }
+
+  // 表单元素样式
+  .formGroup {
+    margin-bottom: 12px;
+
+    label {
+      display: block;
+      margin-bottom: 3px;
+      font-weight: bold;
+      color: #495057;
+      font-size: 0.9em;
+    }
+
+    .formInput {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 0.9em;
+      box-sizing: border-box;
+      font-family: 'consolas', monospace;
+
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+      }
+    }
+
+    .formTextarea {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 0.9em;
+      box-sizing: border-box;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .tagsContainer {
+      min-height: 24px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+      padding: 5px 0;
+
+      .tag {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 3px;
+        border-radius: 5px;
+        font-size: 0.7rem;
+        font-weight: bold;
+
+        &.warn {
+          color: #e67700;
+          background-color: #ffe8cc;
+          border: 2px solid #ffa94d;
+        }
+
+        &.info {
+          color: #0c8599;
+          background-color: #c5f6fa;
+          border: 2px solid #3bc9db;
+        }
+
+        &.tagWithRemove {
+          .removeTagButton {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            line-height: 0;
+            border-radius: 3px;
+            padding: 1px;
+
+            &:hover {
+              background-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .icon {
+              display: block;
+            }
+          }
+        }
+      }
+    }
+
+    .addTagForm {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border: 1px dashed #ced4da;
+
+      .tagInput {
+        flex: 1;
+        min-width: 80px;
+        padding: 6px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.9em;
+        &:focus {
+          outline: none;
+          border-color: #17a2b8;
+          box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.25);
+        }
+      }
+
+      .tagSelect {
+        padding: 6px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.9em;
+        background-color: white;
+        &:focus {
+          outline: none;
+          border-color: #17a2b8;
+          box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.25);
+        }
+      }
+
+      .addButton {
+        @include button;
+        background-color: #17a2b8;
+        color: white;
+        padding: 6px 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.9em;
+        border-radius: 4px;
+
+        .icon {
+          display: block;
+        }
+
+        &:hover {
+          background-color: #138496;
+        }
+      }
+    }
+  }
+}
+
+.editorOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+.addButton {
+  @include button;
+  background-color: #28a745;
+  color: white;
+
+  .icon {
+    display: block;
+  }
+}
+
+.closeButton {
+  @include button;
+  background-color: #6c757d;
+  color: white;
+
+  .icon {
+    display: block;
+  }
+}

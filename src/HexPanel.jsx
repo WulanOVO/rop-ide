@@ -112,8 +112,8 @@ export default function HexPanel({
       }
 
       const mapping = byteToInputMap[rowIndex][byteIndex];
-      const firstChar = mapping.firstChar;
-      const secondChar = mapping.secondChar;
+      const firstChar = mapping[0];
+      const secondChar = mapping[1];
 
       if (!firstChar && !secondChar) {
         return { start: 0, end: 0 };

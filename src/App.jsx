@@ -3,12 +3,14 @@ import style from './styles/App.module.scss';
 import InputPanel from './InputPanel';
 import HexPanel from './HexPanel';
 import NewFilePanel from './NewFilePanel';
+import GadgetManager from './GadgetManager';
 
-const IDE_VERSION = 11;
+const IDE_VERSION = 12;
 
-export default function RopIDE() {
+export default function App() {
   const [isFileOpen, setIsFileOpen] = useState(false);
   const [fileHandle, setFileHandle] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
 
   const [input, setInput] = useState('');
   const [hexDisplay, setHexDisplay] = useState([]);
@@ -18,9 +20,12 @@ export default function RopIDE() {
   const [currentFileName, setCurrentFileName] = useState('未命名.rop');
   const [leftStartAddress, setLeftStartAddress] = useState('E9E0');
   const [rightStartAddress, setRightStartAddress] = useState('D710');
-  const [isDirty, setIsDirty] = useState(false);
   const [gadgets, setGadgets] = useState([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [showNewFilePanel, setShowNewFilePanel] = useState(false);
+  const [showGadgetManager, setShowGadgetManager] = useState(false);
+
+  const [messages, setMessages] = useState([]);
 
   const createNewFile = () => {
     setShowNewFilePanel(true);
@@ -35,8 +40,11 @@ export default function RopIDE() {
     setLeftStartAddress(settings.leftAddress);
     setRightStartAddress(settings.rightAddress);
     setGadgets(settings.gadgets);
-    setIsDirty(true); // 新文件默认是需要保存的
+    setIsDirty(true);
     setShowNewFilePanel(false);
+    setShowAutocomplete(false);
+
+    addMessage(`文件 "${settings.fileName}" 创建成功`, 'info');
   };
 
   const openFile = async () => {
@@ -45,7 +53,7 @@ export default function RopIDE() {
     }
 
     if (!('showOpenFilePicker' in window)) {
-      alert('您的浏览器不支持文件系统访问API，无法打开文件。');
+      addMessage('当前浏览器不支持文件选择功能，建议使用最新版Chrome', 'error');
       return;
     }
 
@@ -69,15 +77,45 @@ export default function RopIDE() {
       setCurrentFileName(_fileHandle.name || '未命名.rop');
       setLeftStartAddress(fileData.leftStartAddress || '0000');
       setRightStartAddress(fileData.rightStartAddress || '0000');
-      setGadgets(fileData.gadgets || []);
-      setIsDirty(false);
+
+      if (fileData.ideVersion === 11) {
+        setGadgets(
+          fileData.gadgets.map((gadget) => {
+            let tags = [];
+            if (gadget.rt) {
+              tags.push({ name: 'RT', type: 'warn' });
+            }
+            gadget.pops.forEach((pop) => {
+              tags.push({ name: pop, type: 'info' });
+            });
+            return {
+              name: gadget.name,
+              addr: gadget.addr,
+              desc: gadget.desc,
+              tags,
+            };
+          })
+        );
+      } else {
+        setGadgets(fileData.gadgets || []);
+      }
+
+      if (fileData.ideVersion < IDE_VERSION) {
+        addMessage(`已自动升级文件版本 (${fileData.ideVersion}→${IDE_VERSION})`, 'warn');
+        setIsDirty(true);
+      } else {
+        setIsDirty(false);
+      }
+
+      addMessage(`文件 "${_fileHandle.name}" 打开成功`, 'info');
     } catch (err) {
-      alert('解析文件时出错，文件可能已经损坏或格式错误。');
+      addMessage('文件打开失败，请检查文件格式', 'error');
       return;
     }
 
     setIsFileOpen(true);
     setFileHandle(_fileHandle);
+    setShowAutocomplete(false);
   };
 
   const handleFileNameChange = (e) => {
@@ -108,6 +146,7 @@ export default function RopIDE() {
       URL.revokeObjectURL(url);
 
       setIsDirty(false);
+      addMessage('文件保存成功', 'info');
       return;
     }
 
@@ -118,6 +157,7 @@ export default function RopIDE() {
       await writable.close();
 
       setIsDirty(false);
+      addMessage('文件保存成功', 'info');
       return;
     }
 
@@ -140,11 +180,13 @@ export default function RopIDE() {
 
       setIsDirty(false);
       setFileHandle(_fileHandle);
+      addMessage('文件保存成功', 'info');
       return;
     } catch (err) {
       if (err.name === 'AbortError') {
         return;
       }
+      addMessage('文件保存失败', 'error');
     }
   };
 
@@ -178,6 +220,31 @@ export default function RopIDE() {
     []
   );
 
+  const handleGadgetsUpdate = useCallback((updatedGadgets) => {
+    setGadgets(updatedGadgets);
+    setIsDirty(true);
+  }, []);
+
+  const addMessage = useCallback((message, type = 'info') => {
+    const newMessage = {
+      id: Date.now(),
+      message,
+      type,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    // 3秒后自动移除消息
+    setTimeout(() => {
+      setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+    }, 3000);
+  }, []);
+
+  const removeMessage = useCallback((id) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  }, []);
+
   // 根据当前文件名更新标题
   useEffect(() => {
     if (currentFileName) {
@@ -185,9 +252,15 @@ export default function RopIDE() {
     }
   }, [currentFileName]);
 
-  // 监听Ctrl+S或Cmd+S保存文件
+  // 全局监听快捷键
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ctrl + O
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        openFile();
+      }
+      // Ctrl + S
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         saveFile();
@@ -238,6 +311,8 @@ export default function RopIDE() {
             </button>
           </div>
         </div>
+
+        <MessagePanel messages={messages} onRemoveMessage={removeMessage} />
       </>
     );
   }
@@ -251,27 +326,42 @@ export default function RopIDE() {
         onConfirm={handleNewFileConfirm}
       />
 
+      {showGadgetManager && (
+        <GadgetManager
+          gadgets={gadgets}
+          onUpdateGadgets={handleGadgetsUpdate}
+          onClose={() => setShowGadgetManager(false)}
+        />
+      )}
+
       <div className={style.toolbar}>
         <button
-          className={style.fileButton}
+          className={style.toolbarButton}
           onClick={createNewFile}
           title="创建新文件"
         >
           新建
         </button>
         <button
-          className={style.fileButton}
+          className={style.toolbarButton}
           onClick={openFile}
-          title="打开文件"
+          title="打开文件 (Ctrl+O)"
         >
           打开
         </button>
         <button
-          className={`${style.fileButton} ${isDirty ? style.highlight : ''}`}
+          className={`${style.toolbarButton} ${isDirty ? style.highlight : ''}`}
           onClick={saveFile}
           title="保存文件 (Ctrl+S)"
         >
           保存
+        </button>
+        <button
+          className={style.toolbarButton}
+          onClick={() => setShowGadgetManager(true)}
+          title="管理Gadgets"
+        >
+          {`Gadgets管理 (${gadgets.length})`}
         </button>
         <input
           type="text"
@@ -291,6 +381,8 @@ export default function RopIDE() {
             selectedInput={selectedInput}
             onClearSelection={handleClearSelection}
             gadgets={gadgets}
+            showAutocomplete={showAutocomplete}
+            setShowAutocomplete={setShowAutocomplete}
           />
 
           <HexPanel
@@ -308,6 +400,29 @@ export default function RopIDE() {
           />
         </div>
       </div>
+
+      <MessagePanel messages={messages} onRemoveMessage={removeMessage} />
     </>
+  );
+}
+
+function MessagePanel({ messages, onRemoveMessage }) {
+  if (messages.length === 0) return null;
+
+  return (
+    <div className={style.messagePanel}>
+      {messages.map((msg) => (
+        <div
+          key={msg.id}
+          className={`${style.message} ${style[msg.type]}`}
+          onClick={() => onRemoveMessage(msg.id)}
+        >
+          <span className={style.messageText}>{msg.message}</span>
+          <span className={style.messageTime}>
+            {msg.timestamp.toLocaleTimeString()}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
