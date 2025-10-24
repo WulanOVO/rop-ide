@@ -5,7 +5,77 @@ import HexPanel from './HexPanel';
 import NewFilePanel from './NewFilePanel';
 import GadgetManager from './GadgetManager';
 
-const IDE_VERSION = 12;
+const IDE_VERSION = 13;
+
+const upgradeOldFile = (fileData) => {
+  if (fileData.ideVersion === 10) {
+    return {
+      ...fileData,
+      ideVersion: IDE_VERSION,
+    };
+  }
+
+  if (fileData.ideVersion === 11) {
+    const newGadgets = fileData.gadgets.map((gadget) => {
+      let tags = [];
+      if (gadget.rt) {
+        tags.push({ name: 'RT', type: 'warn' });
+      }
+      gadget.pops.forEach((pop) => {
+        tags.push({ name: pop, type: 'info' });
+      });
+      return {
+        name: gadget.name,
+        addr: gadget.addr,
+        desc: gadget.desc,
+        tags,
+      };
+    });
+
+    return {
+      ...fileData,
+      gadgets: newGadgets,
+      ideVersion: IDE_VERSION,
+    };
+  }
+
+  if (fileData.ideVersion === 12) {
+    const newGadgets = fileData.gadgets.map((gadget) => {
+      const newTags = gadget.tags.map((tag) => {
+        let newType;
+        switch (tag.type) {
+          case 'info':
+            newType = 'blue';
+            break;
+          case 'warn':
+            newType = 'orange';
+            break;
+          default:
+            newType = 'gray';
+            break;
+        }
+
+        return {
+          name: tag.name,
+          type: newType,
+        };
+      });
+
+      return {
+        name: gadget.name,
+        addr: gadget.addr,
+        desc: gadget.desc,
+        tags: newTags,
+      };
+    });
+
+    return {
+      ...fileData,
+      gadgets: newGadgets,
+      ideVersion: IDE_VERSION,
+    };
+  }
+};
 
 export default function App() {
   const [isFileOpen, setIsFileOpen] = useState(false);
@@ -21,9 +91,10 @@ export default function App() {
   const [leftStartAddress, setLeftStartAddress] = useState('E9E0');
   const [rightStartAddress, setRightStartAddress] = useState('D710');
   const [gadgets, setGadgets] = useState([]);
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [showNewFilePanel, setShowNewFilePanel] = useState(false);
   const [showGadgetManager, setShowGadgetManager] = useState(false);
+  const [highlightedGadget, setHighlightedGadget] = useState(null);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
 
   const [messages, setMessages] = useState([]);
 
@@ -69,7 +140,22 @@ export default function App() {
     const file = await _fileHandle.getFile();
 
     try {
-      const fileData = JSON.parse(await file.text());
+      let fileData = JSON.parse(await file.text());
+
+      if (fileData.ideVersion < IDE_VERSION) {
+        const oldIdeVersion = fileData.ideVersion;
+        fileData = upgradeOldFile(fileData);
+
+        addMessage(
+          `已自动升级文件版本 (${oldIdeVersion}→${IDE_VERSION})`,
+          'warn'
+        );
+        setIsDirty(true);
+      } else if (fileData.ideVersion === IDE_VERSION) {
+        setIsDirty(false);
+      } else {
+        throw '文件版本错误';
+      }
 
       setInput(fileData.input || '');
       setSelectedInput(null);
@@ -77,35 +163,7 @@ export default function App() {
       setCurrentFileName(_fileHandle.name || '未命名.rop');
       setLeftStartAddress(fileData.leftStartAddress || '0000');
       setRightStartAddress(fileData.rightStartAddress || '0000');
-
-      if (fileData.ideVersion === 11) {
-        setGadgets(
-          fileData.gadgets.map((gadget) => {
-            let tags = [];
-            if (gadget.rt) {
-              tags.push({ name: 'RT', type: 'warn' });
-            }
-            gadget.pops.forEach((pop) => {
-              tags.push({ name: pop, type: 'info' });
-            });
-            return {
-              name: gadget.name,
-              addr: gadget.addr,
-              desc: gadget.desc,
-              tags,
-            };
-          })
-        );
-      } else {
-        setGadgets(fileData.gadgets || []);
-      }
-
-      if (fileData.ideVersion < IDE_VERSION) {
-        addMessage(`已自动升级文件版本 (${fileData.ideVersion}→${IDE_VERSION})`, 'warn');
-        setIsDirty(true);
-      } else {
-        setIsDirty(false);
-      }
+      setGadgets(fileData.gadgets || []);
 
       addMessage(`文件 "${_fileHandle.name}" 打开成功`, 'info');
     } catch (err) {
@@ -195,6 +253,11 @@ export default function App() {
     setIsDirty(true);
   };
 
+  const handleCheckGadget = useCallback((gadget) => {
+    setShowGadgetManager(true);
+    setHighlightedGadget(gadget);
+  }, []);
+
   const handleClearSelection = useCallback(() => {
     setSelectedByte(null);
     setSelectedInput(null);
@@ -227,7 +290,7 @@ export default function App() {
 
   const addMessage = useCallback((message, type = 'info') => {
     const newMessage = {
-      id: Date.now(),
+      id: Date.now() + Math.random(), // 确保唯一性
       message,
       type,
       timestamp: new Date(),
@@ -330,7 +393,12 @@ export default function App() {
         <GadgetManager
           gadgets={gadgets}
           onUpdateGadgets={handleGadgetsUpdate}
-          onClose={() => setShowGadgetManager(false)}
+          onClose={() => {
+            setShowGadgetManager(false);
+            setHighlightedGadget(null);
+          }}
+          highlightedGadget={highlightedGadget}
+          setHighlightedGadget={setHighlightedGadget}
         />
       )}
 
@@ -358,7 +426,10 @@ export default function App() {
         </button>
         <button
           className={style.toolbarButton}
-          onClick={() => setShowGadgetManager(true)}
+          onClick={() => {
+            setShowGadgetManager(true);
+            setShowAutocomplete(false);
+          }}
           title="管理Gadgets"
         >
           {`Gadgets管理 (${gadgets.length})`}
@@ -380,9 +451,10 @@ export default function App() {
             byteToInputMap={byteToInputMap}
             selectedInput={selectedInput}
             onClearSelection={handleClearSelection}
-            gadgets={gadgets}
             showAutocomplete={showAutocomplete}
             setShowAutocomplete={setShowAutocomplete}
+            gadgets={gadgets}
+            onCheckGadget={handleCheckGadget}
           />
 
           <HexPanel

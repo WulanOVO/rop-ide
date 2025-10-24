@@ -1,108 +1,151 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import Svg from './svg';
 import style from './styles/GadgetManager.module.scss';
 
-export default function GadgetManager({ gadgets, onUpdateGadgets, onClose }) {
+export default function GadgetManager({
+  gadgets,
+  onUpdateGadgets,
+  onClose,
+  highlightedGadget,
+  setHighlightedGadget,
+}) {
+  const [localGadgets, setLocalGadgets] = useState(gadgets);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingGadget, setEditingGadget] = useState(null);
-  const [newTag, setNewTag] = useState({ name: '', type: 'info' });
-  const gadgetListRef = useRef(null);
-  const previousGadgetsCount = useRef(gadgets.length);
+  const [newTag, setNewTag] = useState({ name: '', type: 'blue' });
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // 滚动到底部的函数
-  const scrollToBottom = useCallback(() => {
-    if (gadgetListRef.current) {
-      gadgetListRef.current.scrollTo({
-        top: gadgetListRef.current.scrollHeight,
-        behavior: 'smooth'
+  const gadgetListRef = useRef(null);
+  const highlightedGadgetRef = useRef(null);
+
+  // 添加滚动到高亮gadget的函数
+  const scrollToHighlightedGadget = useCallback(() => {
+    if (gadgetListRef.current && highlightedGadgetRef.current) {
+      highlightedGadgetRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
       });
     }
-  }, []);
+  }, [highlightedGadgetRef]);
+
+  // 当高亮gadget变化时滚动到该项
+  useEffect(() => {
+    if (highlightedGadget && gadgetListRef.current) {
+      // 延迟执行以确保DOM更新
+      const timer = setTimeout(() => {
+        scrollToHighlightedGadget();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedGadget, scrollToHighlightedGadget]);
+
+  // 根据搜索词过滤 gadgets
+  const filteredGadgets = useMemo(() => {
+    if (!searchTerm) return localGadgets;
+
+    return localGadgets.filter(
+      (gadget) =>
+        gadget.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        gadget.addr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        gadget.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        gadget.tags.some((tag) =>
+          tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
+  }, [localGadgets, searchTerm]);
+
+  const handleCancelEdit = useCallback(() => {
+    setLocalGadgets(gadgets);
+    setEditingIndex(null);
+    setEditingGadget(null);
+    setHighlightedGadget(null);
+  }, [gadgets, setHighlightedGadget]);
 
   const handleAddGadget = useCallback(() => {
+    // 需要同步处理，不能调用handleCancelEdit
+    // 移除正在编辑的gadget
+    let currentGadgets = localGadgets;
+    if (editingIndex !== null && editingIndex === localGadgets.length - 1) {
+      currentGadgets = localGadgets.slice(0, -1);
+    }
+
     const newGadget = {
-      name: '新Gadget',
+      name: '',
       addr: '',
       desc: '',
       tags: [],
     };
-    const updatedGadgets = [...gadgets, newGadget];
-    onUpdateGadgets(updatedGadgets);
-    // 添加后直接进入编辑模式
+
+    const updatedGadgets = [...currentGadgets, newGadget];
+    setLocalGadgets(updatedGadgets);
+
     setEditingIndex(updatedGadgets.length - 1);
     setEditingGadget(newGadget);
-  }, [gadgets, onUpdateGadgets]);
+    setHighlightedGadget(newGadget);
+  }, [localGadgets, gadgets, setHighlightedGadget, editingIndex]);
 
-  // 检查gadgets数量变化，如果增加则滚动到底部
-  useEffect(() => {
-    if (gadgets.length > previousGadgetsCount.current) {
-      // 延迟执行滚动，确保DOM已经更新
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 10);
-      return () => clearTimeout(timer);
-    }
-    previousGadgetsCount.current = gadgets.length;
-  }, [gadgets.length, scrollToBottom]);
+  const handleEditGadget = useCallback((gadget, index) => {
+    setLocalGadgets(gadgets);
+    setEditingIndex(index);
+    setEditingGadget(gadget);
+    setHighlightedGadget(gadget);
+  }, []);
 
   const handleDeleteGadget = useCallback(
     (index) => {
-      if (window.confirm('确定要删除这个Gadget吗？')) {
-        const updatedGadgets = gadgets.filter((_, i) => i !== index);
-        onUpdateGadgets(updatedGadgets);
-        // 如果正在编辑的项被删除，退出编辑模式
-        if (editingIndex === index) {
-          setEditingIndex(null);
-          setEditingGadget(null);
-        } else if (editingIndex > index) {
-          // 如果删除的项在正在编辑的项之前，调整编辑索引
-          setEditingIndex(editingIndex - 1);
-        }
+      if (!window.confirm('确定要删除这个Gadget吗？')) {
+        return;
+      }
+
+      if (editingIndex === index) {
+        handleCancelEdit();
+        return;
+      }
+
+      const updatedGadgets = localGadgets.filter((_, i) => i !== index);
+      setLocalGadgets(updatedGadgets);
+      onUpdateGadgets(updatedGadgets);
+
+      // 如果删除的项在正在编辑的项之前，调整编辑索引
+      if (editingIndex > index) {
+        setEditingIndex(editingIndex - 1);
       }
     },
-    [gadgets, onUpdateGadgets, editingIndex]
+    [localGadgets, onUpdateGadgets, editingIndex]
   );
 
-  const handleEditGadget = useCallback((gadget, index) => {
-    // 确保所有标签都有类型
-    const gadgetWithProperTags = {
-      ...gadget,
-      tags: gadget.tags
-        ? gadget.tags.map((tag) => ({
-            ...tag,
-            type: tag.type || 'info', // 默认为info类型
-          }))
-        : [],
-    };
-    setEditingIndex(index);
-    setEditingGadget(gadgetWithProperTags);
-  }, []);
-
   const handleSaveGadget = useCallback(() => {
-    if (editingIndex !== null) {
-      const updatedGadgets = [...gadgets];
-      updatedGadgets[editingIndex] = editingGadget;
-      onUpdateGadgets(updatedGadgets);
-      setEditingIndex(null);
-      setEditingGadget(null);
+    if (editingIndex === null || !editingGadget) {
+      return;
     }
-  }, [gadgets, editingGadget, editingIndex, onUpdateGadgets]);
 
-  const handleCancelEdit = useCallback(() => {
-    // 如果是新添加的 gadget 并且取消了，需要删除它
-    if (
-      editingGadget &&
-      editingGadget.name === '新Gadget' &&
-      editingGadget.addr === '' &&
-      editingGadget.desc === '' &&
-      editingGadget.tags.length === 0
-    ) {
-      const updatedGadgets = gadgets.filter((_, i) => i !== editingIndex);
-      onUpdateGadgets(updatedGadgets);
+    if (editingGadget.name.trim() === '') {
+      alert('请输入Gadget名称！');
+      return;
+    } else if (editingGadget.addr.trim() === '') {
+      alert('请输入Gadget地址！');
+      return;
     }
+
+    // 转换地址为大写并在开头补0
+    let formattedAddr = editingGadget.addr.toUpperCase();
+    while (formattedAddr.length < 5) {
+      formattedAddr = '0' + formattedAddr;
+    }
+
+    const gadgetToSave = {
+      ...editingGadget,
+      addr: formattedAddr,
+    };
+
+    const updatedLocalGadgets = [...localGadgets];
+    updatedLocalGadgets[editingIndex] = gadgetToSave;
+    setLocalGadgets(updatedLocalGadgets);
+    onUpdateGadgets(updatedLocalGadgets);
+
     setEditingIndex(null);
     setEditingGadget(null);
-  }, [gadgets, editingGadget, editingIndex, onUpdateGadgets]);
+  }, [localGadgets, editingGadget, editingIndex, onUpdateGadgets]);
 
   const handleGadgetChange = useCallback((field, value) => {
     setEditingGadget((prev) => ({
@@ -141,11 +184,20 @@ export default function GadgetManager({ gadgets, onUpdateGadgets, onClose }) {
   );
 
   return (
-    <div className={style.overlay}>
-      <div className={style.managerPanel}>
+    <div className={style.overlay} onClick={onClose}>
+      <div className={style.managerPanel} onClick={(e) => e.stopPropagation()}>
         <div className={style.header}>
           <h2>Gadgets管理</h2>
           <div className={style.panelActions}>
+            <div className={style.searchContainer}>
+              <input
+                type="text"
+                placeholder="搜索 gadgets..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={style.searchInput}
+              />
+            </div>
             <button onClick={handleAddGadget} className={style.addButton}>
               <Svg size={16} icon="add" />
               添加Gadget
@@ -158,7 +210,7 @@ export default function GadgetManager({ gadgets, onUpdateGadgets, onClose }) {
         </div>
 
         <div ref={gadgetListRef} className={style.gadgetList}>
-          {gadgets.map((gadget, index) => (
+          {filteredGadgets.map((gadget, index) => (
             <GadgetCard
               key={index}
               gadget={gadget}
@@ -174,6 +226,14 @@ export default function GadgetManager({ gadgets, onUpdateGadgets, onClose }) {
               onAddTag={handleAddTag}
               onRemoveTag={handleRemoveTag}
               newTag={newTag}
+              isHighlighted={
+                highlightedGadget && highlightedGadget.name === gadget.name
+              }
+              ref={
+                highlightedGadget && highlightedGadget.name === gadget.name
+                  ? highlightedGadgetRef
+                  : null
+              }
             />
           ))}
         </div>
@@ -183,6 +243,7 @@ export default function GadgetManager({ gadgets, onUpdateGadgets, onClose }) {
 }
 
 function GadgetCard({
+  ref,
   gadget,
   onEdit,
   onDelete,
@@ -195,15 +256,27 @@ function GadgetCard({
   onAddTag,
   onRemoveTag,
   newTag,
+  isHighlighted,
 }) {
   if (isEditing && editingGadget) {
     return (
-      <div className={style.gadgetCard}>
+      <div
+        className={`${style.gadgetCard} ${
+          isHighlighted ? style.highlighted : ''
+        }`}
+        ref={ref}
+        tabIndex="-1"
+      >
         <div className={style.cardHeader}>
           <input
             type="text"
             value={editingGadget.name}
-            onChange={(e) => onChange('name', e.target.value)}
+            onChange={(e) => {
+              // 防止输入空格
+              if (!/\s/.test(e.target.value)) {
+                onChange('name', e.target.value);
+              }
+            }}
             className={style.nameInput}
             placeholder="名称"
           />
@@ -214,7 +287,13 @@ function GadgetCard({
           <input
             type="text"
             value={editingGadget.addr}
-            onChange={(e) => onChange('addr', e.target.value)}
+            onChange={(e) => {
+              // 限制只能输入十六进制字符，且最多5位
+              const value = e.target.value;
+              if (/^[0-9A-Fa-f]*$/.test(value) && value.length <= 5) {
+                onChange('addr', value);
+              }
+            }}
             className={style.formInput}
             placeholder="地址"
           />
@@ -273,8 +352,8 @@ function GadgetCard({
               onChange={(e) => onTagChange('type', e.target.value)}
               className={style.tagSelect}
             >
-              <option value="info">信息</option>
-              <option value="warn">警告</option>
+              <option value="blue">蓝色</option>
+              <option value="orange">橙色</option>
             </select>
             <button onClick={onAddTag} className={style.addButton}>
               <Svg size={16} icon="add" />
@@ -300,7 +379,12 @@ function GadgetCard({
   }
 
   return (
-    <div className={style.gadgetCard}>
+    <div
+      className={`${style.gadgetCard} ${
+        isHighlighted ? style.highlighted : ''
+      }`}
+      ref={ref}
+    >
       <div className={style.cardActions}>
         <button onClick={onEdit} className={style.iconButton} title="编辑">
           <Svg size={16} icon="edit" />

@@ -8,13 +8,12 @@ export default function InputPanel({
   byteToInputMap,
   selectedInput,
   onClearSelection,
-  gadgets,
   showAutocomplete,
   setShowAutocomplete,
+  gadgets,
+  onCheckGadget,
 }) {
   const [textareaRef, setTextareaRef] = useState(null);
-  const highlightedContentRef = useRef(null);
-  const editorRef = useRef(null);
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 });
   const [suggestions, setSuggestions] = useState([]);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
@@ -22,6 +21,9 @@ export default function InputPanel({
     top: 0,
     left: 0,
   });
+
+  const highlightedContentRef = useRef(null);
+  const editorRef = useRef(null);
 
   // 生成高亮HTML
   const generateHighlightedHTML = useCallback(
@@ -391,6 +393,8 @@ export default function InputPanel({
             onSelect={handleSuggestionSelect}
             selectedIndex={selectedSuggestionIndex}
             style={autocompletePosition}
+            onCheckGadget={onCheckGadget}
+            setShowAutocomplete={setShowAutocomplete}
           />
         )}
       </div>
@@ -403,6 +407,8 @@ function AutocompletePanel({
   onSelect,
   selectedIndex,
   style: positionStyle,
+  onCheckGadget,
+  setShowAutocomplete,
 }) {
   const panelRef = useRef(null);
 
@@ -441,6 +447,16 @@ function AutocompletePanel({
             </span>
           ))}
           <span className={style.desc}>{suggestion.desc?.split('\n')[0]}</span>
+          <button
+            className={style.arrowButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowAutocomplete(false);
+              onCheckGadget(suggestion);
+            }}
+          >
+            →
+          </button>
         </div>
       ))}
     </div>

@@ -111,6 +111,7 @@
   }
 
   .suggestionItem {
+    display: flex;
     padding: 6px 10px;
     font-size: 0.9rem;
     cursor: pointer;
@@ -144,13 +145,13 @@
       font-size: 0.7rem;
       font-weight: bold;
 
-      &.warn {
+      &.orange {
         color: #e67700;
         background-color: #ffe8cc;
         border: 2px solid #ffa94d;
       }
 
-      &.info {
+      &.blue {
         color: #0c8599;
         background-color: #c5f6fa;
         border: 2px solid #3bc9db;
@@ -162,6 +163,23 @@
       padding-left: 0.5rem;
       color: #666;
       font-size: 0.9em;
+    }
+
+    .arrowButton {
+      background: none;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 5px;
+      margin-left: 0;
+      color: #666;
+      transition: background-color 0.2s ease-in-out;
+
+      &:hover {
+        color: #000;
+        background-color: #d0d0d0;
+      }
     }
   }
 }

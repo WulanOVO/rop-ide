@@ -35,7 +35,7 @@
   border-radius: 8px;
   width: 90%;
   max-width: 1200px;
-  max-height: 90vh;
+  height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -57,11 +57,31 @@
     .panelActions {
       display: flex;
       gap: 10px;
+      align-items: center;
 
       button {
         display: flex;
         align-items: center;
         gap: 5px;
+      }
+    }
+  }
+
+  .searchContainer {
+    width: 200px;
+
+    .searchInput {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 1em;
+      box-sizing: border-box;
+
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
       }
     }
   }
@@ -72,6 +92,7 @@
     flex: 1;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-auto-rows: min-content;
     gap: 20px;
   }
 }
@@ -83,6 +104,12 @@
   border: 1px solid #dee2e6;
   padding: 15px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &.highlighted {
+    outline: 2px solid #007bff;
+    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.25);
+    background-color: #f8f9fa;
+  }
 
   .cardActions {
     display: flex;
@@ -143,9 +170,10 @@
 
     .nameInput {
       padding: 6px 8px;
+      margin-bottom: 5px;
       border: 1px solid #ccc;
       border-radius: 4px;
-      font-size: 0.9em;
+      font-size: 1em;
       font-weight: bold;
       box-sizing: border-box;
       font-family: 'consolas', monospace;
@@ -170,13 +198,13 @@
         font-size: 0.7rem;
         font-weight: bold;
 
-        &.warn {
+        &.orange {
           color: #e67700;
           background-color: #ffe8cc;
           border: 2px solid #ffa94d;
         }
 
-        &.info {
+        &.blue {
           color: #0c8599;
           background-color: #c5f6fa;
           border: 2px solid #3bc9db;
@@ -222,7 +250,7 @@
 
   // 表单元素样式
   .formGroup {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 
     label {
       display: block;
@@ -277,13 +305,13 @@
         font-size: 0.7rem;
         font-weight: bold;
 
-        &.warn {
+        &.orange {
           color: #e67700;
           background-color: #ffe8cc;
           border: 2px solid #ffa94d;
         }
 
-        &.info {
+        &.blue {
           color: #0c8599;
           background-color: #c5f6fa;
           border: 2px solid #3bc9db;
@@ -369,19 +397,6 @@
       }
     }
   }
-}
-
-.editorOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1100;
 }
 
 .addButton {

@@ -115,7 +115,7 @@
   },
   {
     "name": "refresh-ddd4",
-    "addr": "07F00",
+    "addr": "08706",
     "desc": "刷新DDD4屏幕缓冲区",
     "tags": []
   },
@@ -133,15 +133,21 @@
     "tags": []
   },
   {
+    "name": "jump-e14",
+    "addr": "10740",
+    "desc": "重设SP为[ER14]\nER14：新栈指针\n注意会 POP ER14",
+    "tags": [{ "name": "ER14", "type": "info" }]
+  },
+  {
     "name": "jump-q8",
     "addr": "12D34",
-    "desc": "重设SP为[ER14]\nER14：新栈指针",
+    "desc": "重设SP为[ER14]\nER14：新栈指针\n注意会 POP QR8",
     "tags": [{ "name": "QR8", "type": "info" }]
   },
   {
     "name": "jump-q8q0",
     "addr": "2237A",
-    "desc": "重设SP为[ER14]\nER14：新栈指针",
+    "desc": "重设SP为[ER14]\nER14：新栈指针\n注意会 POP QR8、QR0",
     "tags": [
       { "name": "QR8", "type": "info" },
       { "name": "QR0", "type": "info" }
@@ -150,25 +156,25 @@
   {
     "name": "print-0x1y",
     "addr": "0821E",
-    "desc": "打印一行文本内容（可变x轴偏移）\nR0：x轴偏移\nR1：y轴偏移\nR2：文本内容指针",
+    "desc": "打印一行文本内容（可变x轴偏移）\nR0：x轴偏移\nR1：y轴偏移\nER2：文本内容指针",
     "tags": []
   },
   {
     "name": "print-0ynf",
     "addr": "221AE",
-    "desc": "打印一行文本内容（固定字体）\nR0：y轴偏移\nR2：文本内容指针",
+    "desc": "打印一行文本内容（固定字体）\nR0：y轴偏移\nER2：文本内容指针",
     "tags": []
   },
   {
     "name": "print-1ysf",
     "addr": "222A8",
-    "desc": "打印一行文本内容（字体随设置改变）\nR1：y轴偏移\nR2：文本内容指针",
+    "desc": "打印一行文本内容（字体随设置改变）\nR1：y轴偏移\nER2：文本内容指针",
     "tags": []
   },
   {
     "name": "print-0f1y",
     "addr": "221B2",
-    "desc": "打印一行文本内容（可变字体）\nR0：字体编码\nR1：y轴偏移\nR2：文本内容指针",
+    "desc": "打印一行文本内容（可变字体）\nR0：字体编码\nR1：y轴偏移\nER2：文本内容指针",
     "tags": []
   },
   {
