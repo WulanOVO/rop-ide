@@ -1,3 +1,5 @@
+@use './mixins';
+
 @mixin button {
   padding: 8px 15px;
   border: none;
@@ -105,6 +107,17 @@
   padding: 15px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
+  &.draggable {
+    .cardHeader {
+      cursor: move;
+    }
+  }
+
+  // 拖拽时的样式
+  &.dragging {
+    opacity: 0.5;
+  }
+
   &.highlighted {
     outline: 2px solid #007bff;
     box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.25);
@@ -193,40 +206,7 @@
       align-items: center;
 
       .tag {
-        padding: 1px 3px;
-        border-radius: 5px;
-        font-size: 0.7rem;
-        font-weight: bold;
-
-        &.orange {
-          color: #e67700;
-          background-color: #ffe8cc;
-          border: 2px solid #ffa94d;
-        }
-
-        &.blue {
-          color: #0c8599;
-          background-color: #c5f6fa;
-          border: 2px solid #3bc9db;
-        }
-
-        &.tagWithRemove {
-          display: flex;
-          align-items: center;
-          gap: 2px;
-
-          .removeTagButton {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            line-height: 0;
-
-            .icon {
-              display: block;
-            }
-          }
-        }
+        @include mixins.tag;
       }
     }
   }
@@ -297,43 +277,26 @@
       padding: 5px 0;
 
       .tag {
+        @include mixins.tag;
+
         display: flex;
         align-items: center;
-        gap: 3px;
-        padding: 1px 3px;
-        border-radius: 5px;
-        font-size: 0.7rem;
-        font-weight: bold;
 
-        &.orange {
-          color: #e67700;
-          background-color: #ffe8cc;
-          border: 2px solid #ffa94d;
-        }
+        .removeTagButton {
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          line-height: 0;
+          border-radius: 3px;
+          padding: 1px;
 
-        &.blue {
-          color: #0c8599;
-          background-color: #c5f6fa;
-          border: 2px solid #3bc9db;
-        }
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+          }
 
-        &.tagWithRemove {
-          .removeTagButton {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            line-height: 0;
-            border-radius: 3px;
-            padding: 1px;
-
-            &:hover {
-              background-color: rgba(255, 255, 255, 0.2);
-            }
-
-            .icon {
-              display: block;
-            }
+          .icon {
+            display: block;
           }
         }
       }
@@ -396,6 +359,16 @@
         }
       }
     }
+  }
+}
+
+.exportButton {
+  @include button;
+  background-color: #007bff;
+  color: white;
+
+  .icon {
+    display: block;
   }
 }
 

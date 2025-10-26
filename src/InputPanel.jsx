@@ -220,8 +220,15 @@ export default function InputPanel({
         highlightedContentRef.current.scrollTop = e.target.scrollTop;
         highlightedContentRef.current.scrollLeft = e.target.scrollLeft;
       }
+
+      // 更新autocomplete面板的位置
+      if (showAutocomplete && autocompletePosition) {
+        const cursorPos = textareaRef.selectionStart;
+        const { top, left } = getCursorPosition(textareaRef, cursorPos);
+        setAutocompletePosition({ top, left });
+      }
     },
-    [textareaRef]
+    [textareaRef, showAutocomplete, autocompletePosition]
   );
 
   // 当输入内容变化时，更新高亮显示
@@ -315,11 +322,13 @@ export default function InputPanel({
 
     document.body.appendChild(div);
 
-    const top = span.offsetTop + span.offsetHeight;
-    const left = span.offsetLeft;
+    // 计算相对于textarea可视区域的坐标
+    const top = span.offsetTop + span.offsetHeight - textarea.scrollTop;
+    const left = span.offsetLeft - textarea.scrollLeft;
 
     document.body.removeChild(div);
 
+    // 返回相对于textarea可视区域的坐标
     return { top, left };
   };
 
@@ -442,7 +451,7 @@ function AutocompletePanel({
           <span className={style.name}>{suggestion.name}</span>
           <span className={style.addr}>{suggestion.addr}</span>
           {suggestion.tags.map((tag) => (
-            <span key={tag.name} className={`${style.tag} ${style[tag.type]}`}>
+            <span key={tag.name} className={`${style.tag} ${style[tag.color]}`}>
               {tag.name}
             </span>
           ))}

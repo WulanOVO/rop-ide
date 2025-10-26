@@ -5,74 +5,23 @@ import HexPanel from './HexPanel';
 import NewFilePanel from './NewFilePanel';
 import GadgetManager from './GadgetManager';
 
-const IDE_VERSION = 13;
+const IDE_VERSION = 100;
 
 const upgradeOldFile = (fileData) => {
-  if (fileData.ideVersion === 10) {
+  if (fileData.ideVersion < 100) {
+    const messages = [['已自动升级文件到最新版本', 'warn']];
+    if (fileData.gadgets) {
+      messages.push(['测试版 Gadgets 已停止支持', 'warn']);
+    }
     return {
-      ...fileData,
-      ideVersion: IDE_VERSION,
-    };
-  }
-
-  if (fileData.ideVersion === 11) {
-    const newGadgets = fileData.gadgets.map((gadget) => {
-      let tags = [];
-      if (gadget.rt) {
-        tags.push({ name: 'RT', type: 'warn' });
-      }
-      gadget.pops.forEach((pop) => {
-        tags.push({ name: pop, type: 'info' });
-      });
-      return {
-        name: gadget.name,
-        addr: gadget.addr,
-        desc: gadget.desc,
-        tags,
-      };
-    });
-
-    return {
-      ...fileData,
-      gadgets: newGadgets,
-      ideVersion: IDE_VERSION,
-    };
-  }
-
-  if (fileData.ideVersion === 12) {
-    const newGadgets = fileData.gadgets.map((gadget) => {
-      const newTags = gadget.tags.map((tag) => {
-        let newType;
-        switch (tag.type) {
-          case 'info':
-            newType = 'blue';
-            break;
-          case 'warn':
-            newType = 'orange';
-            break;
-          default:
-            newType = 'gray';
-            break;
-        }
-
-        return {
-          name: tag.name,
-          type: newType,
-        };
-      });
-
-      return {
-        name: gadget.name,
-        addr: gadget.addr,
-        desc: gadget.desc,
-        tags: newTags,
-      };
-    });
-
-    return {
-      ...fileData,
-      gadgets: newGadgets,
-      ideVersion: IDE_VERSION,
+      newFileData: {
+        input: fileData.input,
+        leftStartAddress: fileData.leftStartAddress,
+        rightStartAddress: fileData.rightStartAddress,
+        gadgets: [],
+        ideVersion: IDE_VERSION,
+      },
+      messages,
     };
   }
 };
@@ -143,13 +92,10 @@ export default function App() {
       let fileData = JSON.parse(await file.text());
 
       if (fileData.ideVersion < IDE_VERSION) {
-        const oldIdeVersion = fileData.ideVersion;
-        fileData = upgradeOldFile(fileData);
+        const { newFileData, messages } = upgradeOldFile(fileData);
+        fileData = newFileData;
 
-        addMessage(
-          `已自动升级文件版本 (${oldIdeVersion}→${IDE_VERSION})`,
-          'warn'
-        );
+        messages.forEach((message) => addMessage(...message));
         setIsDirty(true);
       } else if (fileData.ideVersion === IDE_VERSION) {
         setIsDirty(false);
@@ -372,6 +318,20 @@ export default function App() {
             <button className={style.welcomeButton} onClick={openFile}>
               打开文件
             </button>
+          </div>
+
+          <div className={style.footer}>
+            <p className={style.copyright}>
+              &copy; {new Date().getFullYear()}
+              <a
+                href="https://github.com/WulanOVO/rop-ide"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                RopIDE
+              </a>
+              保留所有权利
+            </p>
           </div>
         </div>
 

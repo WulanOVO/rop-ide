@@ -1,0 +1,42 @@
+@mixin tag {
+  padding: 1px 3px;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: bold;
+
+  &.gray {
+    color: #343a40;
+    background-color: #f1f3f5;
+    border: 2px solid #adb5bd;
+  }
+
+  &.blue {
+    color: #0c8599;
+    background-color: #c5f6fa;
+    border: 2px solid #3bc9db;
+  }
+
+  &.yellow {
+    color: #f08c00;
+    background-color: #fff3bf;
+    border: 2px solid #fcc419;
+  }
+
+  &.orange {
+    color: #e8590c;
+    background-color: #ffe8cc;
+    border: 2px solid #ffa94d;
+  }
+
+  &.green {
+    color: #099268;
+    background-color: #c3fae8;
+    border: 2px solid #38d9a9;
+  }
+
+  &.purple {
+    color: #9c36b5;
+    background-color: #f3d9fa;
+    border: 2px solid #da77f2;
+  }
+}

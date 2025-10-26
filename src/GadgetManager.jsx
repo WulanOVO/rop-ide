@@ -12,11 +12,12 @@ export default function GadgetManager({
   const [localGadgets, setLocalGadgets] = useState(gadgets);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingGadget, setEditingGadget] = useState(null);
-  const [newTag, setNewTag] = useState({ name: '', type: 'blue' });
+  const [newTag, setNewTag] = useState({ name: '', color: 'gray' });
   const [searchTerm, setSearchTerm] = useState('');
 
   const gadgetListRef = useRef(null);
   const highlightedGadgetRef = useRef(null);
+  const scrollIntervalRef = useRef(null);
 
   // 添加滚动到高亮gadget的函数
   const scrollToHighlightedGadget = useCallback(() => {
@@ -39,6 +40,72 @@ export default function GadgetManager({
     }
   }, [highlightedGadget, scrollToHighlightedGadget]);
 
+  // 边缘滚动函数
+  const handleEdgeScroll = useCallback((e) => {
+    if (!gadgetListRef.current) return;
+
+    const container = gadgetListRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const scrollThreshold = 60; // 距离边缘60px时开始滚动
+    const scrollSpeed = 5; // 滚动速度
+
+    const mouseY = e.clientY;
+    const containerTop = containerRect.top;
+    const containerBottom = containerRect.bottom;
+
+    // 清除之前的滚动定时器
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+
+    // 检查是否靠近顶部边缘
+    if (mouseY - containerTop < scrollThreshold && container.scrollTop > 0) {
+      scrollIntervalRef.current = setInterval(() => {
+        if (container.scrollTop <= 0) {
+          clearInterval(scrollIntervalRef.current);
+          scrollIntervalRef.current = null;
+          return;
+        }
+        container.scrollTop -= scrollSpeed;
+      }, 16); // 约60fps
+    }
+    // 检查是否靠近底部边缘
+    else if (
+      containerBottom - mouseY < scrollThreshold &&
+      container.scrollTop < container.scrollHeight - container.clientHeight
+    ) {
+      scrollIntervalRef.current = setInterval(() => {
+        if (
+          container.scrollTop >=
+          container.scrollHeight - container.clientHeight
+        ) {
+          clearInterval(scrollIntervalRef.current);
+          scrollIntervalRef.current = null;
+          return;
+        }
+        container.scrollTop += scrollSpeed;
+      }, 16); // 约60fps
+    }
+  }, []);
+
+  // 停止边缘滚动
+  const stopEdgeScroll = useCallback(() => {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  }, []);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+      }
+    };
+  }, []);
+
   // 根据搜索词过滤 gadgets
   const filteredGadgets = useMemo(() => {
     if (!searchTerm) return localGadgets;
@@ -59,7 +126,57 @@ export default function GadgetManager({
     setEditingIndex(null);
     setEditingGadget(null);
     setHighlightedGadget(null);
-  }, [gadgets, setHighlightedGadget]);
+  }, [setHighlightedGadget, gadgets]);
+
+  // 处理拖拽排序
+  const handleDragStart = useCallback((e, index) => {
+    e.dataTransfer.setData('text/plain', index);
+    e.dataTransfer.effectAllowed = 'move';
+    // 添加拖拽时的视觉反馈
+    e.target.classList.add(style.dragging);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (e) => {
+      // 移除拖拽时的视觉反馈
+      e.target.classList.remove(style.dragging);
+      // 停止边缘滚动
+      stopEdgeScroll();
+    },
+    [stopEdgeScroll]
+  );
+
+  const handleDragOver = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      // 处理边缘滚动
+      handleEdgeScroll(e);
+    },
+    [handleEdgeScroll]
+  );
+
+  const handleDrop = useCallback(
+    (e, dropIndex) => {
+      e.preventDefault();
+      // 移除拖拽时的视觉反馈
+      e.target.classList.remove(style.dragging);
+      // 停止边缘滚动
+      stopEdgeScroll();
+
+      const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+
+      if (dragIndex !== dropIndex) {
+        const newGadgets = [...localGadgets];
+        const [draggedItem] = newGadgets.splice(dragIndex, 1);
+        newGadgets.splice(dropIndex, 0, draggedItem);
+
+        setLocalGadgets(newGadgets);
+        onUpdateGadgets(newGadgets);
+      }
+    },
+    [localGadgets, onUpdateGadgets, stopEdgeScroll]
+  );
 
   const handleAddGadget = useCallback(() => {
     // 需要同步处理，不能调用handleCancelEdit
@@ -85,7 +202,6 @@ export default function GadgetManager({
   }, [localGadgets, gadgets, setHighlightedGadget, editingIndex]);
 
   const handleEditGadget = useCallback((gadget, index) => {
-    setLocalGadgets(gadgets);
     setEditingIndex(index);
     setEditingGadget(gadget);
     setHighlightedGadget(gadget);
@@ -145,6 +261,7 @@ export default function GadgetManager({
 
     setEditingIndex(null);
     setEditingGadget(null);
+    setHighlightedGadget(null);
   }, [localGadgets, editingGadget, editingIndex, onUpdateGadgets]);
 
   const handleGadgetChange = useCallback((field, value) => {
@@ -168,7 +285,7 @@ export default function GadgetManager({
         ...prev,
         tags: updatedTags,
       }));
-      setNewTag({ name: '', type: 'info' });
+      setNewTag({ name: '', color: 'gray' });
     }
   }, [editingGadget, newTag]);
 
@@ -182,6 +299,19 @@ export default function GadgetManager({
     },
     [editingGadget]
   );
+
+  const handleExportGadgets = useCallback(() => {
+    const dataStr = JSON.stringify(localGadgets);
+    const dataUri =
+      'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+    const exportFileDefaultName = 'gadgets.json';
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  }, [localGadgets]);
 
   return (
     <div className={style.overlay} onClick={onClose}>
@@ -198,6 +328,12 @@ export default function GadgetManager({
                 className={style.searchInput}
               />
             </div>
+            <button
+              onClick={handleExportGadgets}
+              className={style.exportButton}
+            >
+              导出
+            </button>
             <button onClick={handleAddGadget} className={style.addButton}>
               <Svg size={16} icon="add" />
               添加Gadget
@@ -234,6 +370,11 @@ export default function GadgetManager({
                   ? highlightedGadgetRef
                   : null
               }
+              draggable={editingIndex === null}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragEnd={handleDragEnd}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, index)}
             />
           ))}
         </div>
@@ -257,6 +398,11 @@ function GadgetCard({
   onRemoveTag,
   newTag,
   isHighlighted,
+  draggable,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }) {
   if (isEditing && editingGadget) {
     return (
@@ -317,9 +463,7 @@ function GadgetCard({
               editingGadget.tags.map((tag, tagIndex) => (
                 <span
                   key={tagIndex}
-                  className={`${style.tag} ${style[tag.type] || style.info} ${
-                    style.tagWithRemove
-                  }`}
+                  className={`${style.tag} ${style[tag.color] || style.gray}`}
                 >
                   {tag.name}
                   <button
@@ -348,12 +492,16 @@ function GadgetCard({
               }}
             />
             <select
-              value={newTag.type}
-              onChange={(e) => onTagChange('type', e.target.value)}
+              value={newTag.color}
+              onChange={(e) => onTagChange('color', e.target.value)}
               className={style.tagSelect}
             >
+              <option value="gray">灰色</option>
               <option value="blue">蓝色</option>
+              <option value="yellow">黄色</option>
               <option value="orange">橙色</option>
+              <option value="green">绿色</option>
+              <option value="purple">紫色</option>
             </select>
             <button onClick={onAddTag} className={style.addButton}>
               <Svg size={16} icon="add" />
@@ -382,8 +530,14 @@ function GadgetCard({
     <div
       className={`${style.gadgetCard} ${
         isHighlighted ? style.highlighted : ''
-      }`}
+      } ${draggable ? style.draggable : ''}`}
       ref={ref}
+      // 拖拽相关属性
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
     >
       <div className={style.cardActions}>
         <button onClick={onEdit} className={style.iconButton} title="编辑">
@@ -401,7 +555,7 @@ function GadgetCard({
             {gadget.tags.map((tag, tagIndex) => (
               <span
                 key={tagIndex}
-                className={`${style.tag} ${style[tag.type] || style.info}`}
+                className={`${style.tag} ${style[tag.color] || style.gray}`}
               >
                 {tag.name}
               </span>
