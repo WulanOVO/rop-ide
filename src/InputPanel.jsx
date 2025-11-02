@@ -25,79 +25,6 @@ export default function InputPanel({
   const highlightedContentRef = useRef(null);
   const editorRef = useRef(null);
 
-  // 生成高亮HTML
-  const generateHighlightedHTML = useCallback(
-    (code) => {
-      if (!code) return [];
-
-      const lines = code.split('\n');
-      const htmlLines = [];
-
-      const newSegment = (text, type) =>
-        `<span class="${type.map((t) => style[t]).join(' ')}">${text}</span>`;
-
-      lines.forEach((line, lineIndex) => {
-        const htmlLine = [];
-
-        if (!line) {
-          htmlLines.push(`<div data-line-index="${lineIndex}"> </div>`);
-          return;
-        }
-
-        // 拆分行尾的注释 (//...)
-        const [, beforeComment, comment = ''] = line.match(
-          /^([^\/]*)(\/\/.*)?$/
-        ) || [, line];
-
-        // 拆分 gadget 与非 gadget 片段
-        const parts = beforeComment.split(/(#[^;]*;|\s+)/);
-        parts.forEach((part) => {
-          if (!part) return;
-
-          // 如果是 gadget 片段
-          if (part.startsWith('#')) {
-            // 如果是未闭合的 gadget
-            if (!part.endsWith(';')) {
-              htmlLine.push(newSegment(part, ['gadget', 'unclosed']));
-              return;
-            }
-
-            if (
-              part.slice(1, 2) === '-'
-                ? gadgets.find((g) => g.name === part.slice(2, -1))
-                : gadgets.find((g) => g.name === part.slice(1, -1))
-            ) {
-              htmlLine.push(newSegment(part, ['gadget']));
-            } else {
-              htmlLine.push(newSegment(part, ['gadget', 'undefined']));
-            }
-            return;
-          }
-
-          // 剩下的再按十六进制切分
-          const hexParts = part.split(/([0-9a-fA-F\s]+)/);
-          hexParts.forEach((sub) => {
-            if (!sub) return;
-            const type = /^[0-9a-fA-F\s]+$/.test(sub) ? ['code'] : ['comment'];
-            htmlLine.push(newSegment(sub, type));
-          });
-        });
-
-        // 把整段“//xxx”追加为注释
-        if (comment) {
-          htmlLine.push(newSegment(comment, ['comment']));
-        }
-
-        htmlLines.push(
-          `<div data-line-index="${lineIndex}">${htmlLine.join('')}</div>`
-        );
-      });
-
-      return htmlLines.join('');
-    },
-    [gadgets]
-  );
-
   // 滚动输入框到选中位置
   const scrollTextareaToSelection = useCallback(
     (position) => {
@@ -230,14 +157,6 @@ export default function InputPanel({
     },
     [textareaRef, showAutocomplete, autocompletePosition]
   );
-
-  // 当输入内容变化时，更新高亮显示
-  useEffect(() => {
-    if (highlightedContentRef.current) {
-      const html = generateHighlightedHTML(input);
-      highlightedContentRef.current.innerHTML = html;
-    }
-  }, [input, generateHighlightedHTML]);
 
   // 当十六进制字节被选中时，高亮输入框中对应的内容
   useEffect(() => {
@@ -372,10 +291,11 @@ export default function InputPanel({
   return (
     <div className={style.inputPanel} ref={editorRef}>
       <div className={style.codeEditorContainer}>
-        <div
-          className={style.highlightedContent}
+        <HighlightedContent
+          input={input}
+          gadgets={gadgets}
           ref={highlightedContentRef}
-        ></div>
+        />
         <textarea
           ref={setTextareaRef}
           value={input}
@@ -407,6 +327,117 @@ export default function InputPanel({
           />
         )}
       </div>
+    </div>
+  );
+}
+
+function HighlightedContent({ input, gadgets, ref }) {
+  const inputLines = input.split('\n');
+
+  const formatLine = (line, index) => {
+    if (line.trim() === '') return <br/>;
+
+    const spans = [];
+    let currentType = '';
+    let currentContent = '';
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      // 注释
+      if (char === '/' && line[i + 1] === '/') {
+        if (i > 0) {
+          spans.push({ key: i, type: currentType, content: currentContent });
+        }
+        currentType = 'comment';
+        currentContent = line.substring(i);
+        break;
+      }
+
+      // gadget
+      else if (char === '#') {
+        if (i > 0) {
+          spans.push({ key: i, type: currentType, content: currentContent });
+        }
+        currentType = 'gadget';
+
+        // 向后寻找 ; 或空格结束 gadget
+        let j = i + 1;
+        while (j < line.length && line[j] !== ';' && line[j] !== ' ') {
+          j++;
+        }
+
+        currentContent = line.substring(i, j + 1);
+
+        // gadget 已闭合的情况
+        if (line[j] === ';') {
+          currentType += ',closed';
+
+          const gadgetName = currentContent.substring(
+            1,
+            currentContent.length - 1
+          );
+
+          const gadget = gadgets.find((g) => g.name === gadgetName);
+          if (!gadget) {
+            currentType += ',undefined';
+          }
+        }
+
+        i = j;
+      }
+
+      // 十六进制字符
+      else if (/[0-9a-fA-F]/.test(char)) {
+        if (i > 0) {
+          spans.push({ key: i, type: currentType, content: currentContent });
+        }
+        currentType = 'hex';
+
+        // 向后寻找非十六进制字符
+        let j = i + 1;
+        while (j < line.length && /[0-9a-fA-F ]/.test(line[j])) {
+          j++;
+        }
+
+        currentContent = line.substring(i, j);
+        i = j - 1;
+      }
+
+      // 其他字符
+      else {
+        if (currentType !== 'other') {
+          spans.push({ key: i, type: currentType, content: currentContent });
+          currentType = 'other';
+          currentContent = char;
+        } else {
+          currentContent += char;
+        }
+      }
+    }
+
+    spans.push({ key: -1, type: currentType, content: currentContent });
+
+    return (
+      <div key={index}>
+        {spans.map((span) => (
+          <span
+            key={span.key}
+            className={span.type
+              .split(',')
+              .map((t) => style[t])
+              .join(' ')}
+          >
+            {span.content}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className={style.highlightedContent} ref={ref}>
+      {inputLines.map((line, index) => formatLine(line, index))}
     </div>
   );
 }

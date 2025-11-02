@@ -321,7 +321,17 @@ export default function App() {
           </div>
 
           <div className={style.footer}>
-            <p className={style.copyright}>
+            <p>
+              在找 shengyuyou2008 的项目吗？
+              <a
+                href="https://rop-ide.pages.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                友谊链接
+              </a>
+            </p>
+            <p>
               &copy; {new Date().getFullYear()}
               <a
                 href="https://github.com/WulanOVO/rop-ide"

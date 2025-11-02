@@ -34,6 +34,14 @@
       pointer-events: none;
       z-index: 1;
 
+      .hex {
+        color: #000;
+      }
+
+      .other {
+        color: #666;
+      }
+
       .comment {
         color: #888;
         font-style: italic;
@@ -41,13 +49,13 @@
 
       .gadget {
         color: #0066cc;
-        border-radius: 2px;
-        background-color: #eff6fc;
-        text-decoration: underline;
+        background-color: transparent;
+        text-decoration: none;
 
-        &.unclosed {
-          background-color: transparent;
-          text-decoration: none;
+        &.closed {
+          border-radius: 2px;
+          background-color: #eff6fc;
+          text-decoration: underline;
         }
 
         &.undefined {
