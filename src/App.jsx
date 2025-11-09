@@ -4,6 +4,7 @@ import InputPanel from './InputPanel';
 import HexPanel from './HexPanel';
 import NewFilePanel from './NewFilePanel';
 import GadgetManager from './GadgetManager';
+import { parseRopInput } from './parser';
 
 const IDE_VERSION = 100;
 
@@ -44,6 +45,7 @@ export default function App() {
   const [showGadgetManager, setShowGadgetManager] = useState(false);
   const [highlightedGadget, setHighlightedGadget] = useState(null);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [parsedInput, setParsedInput] = useState({ highlightLines: [], hexChars: '', charPosInInputMap: [] });
 
   const [messages, setMessages] = useState([]);
 
@@ -298,6 +300,52 @@ export default function App() {
     };
   }, [isDirty]);
 
+  // 当输入或gadgets改变时重新解析输入
+  useEffect(() => {
+    const { highlightLines, hexChars, charPosInInputMap } = parseRopInput(input, gadgets, {
+      leftStartAddress,
+      rightStartAddress,
+    });
+
+    // 更新解析后的数据
+    setParsedInput({ highlightLines, hexChars, charPosInInputMap });
+
+    // 处理hexDisplay和byteToInputMap的更新
+    let processedHexChars = hexChars.length > 0 ? hexChars : '00';
+    if (charPosInInputMap.length === 0) {
+      charPosInInputMap.push(0);
+      charPosInInputMap.push(0);
+    }
+
+    const hexRows = [];
+    const byteMapping = [];
+
+    for (let i = 0; i < processedHexChars.length; i += 32) {
+      const chunk = processedHexChars.slice(i, i + 32).padEnd(32, '0');
+      const bytes = [];
+      const byteMappingRow = [];
+
+      for (let j = 0; j < chunk.length; j += 2) {
+        const byte = chunk.substring(j, j + 2);
+        bytes.push(byte);
+
+        const firstCharPos = charPosInInputMap[i + j];
+        const secondCharPos = charPosInInputMap[i + j + 1];
+
+        byteMappingRow.push({
+          start: firstCharPos,
+          end: secondCharPos,
+        });
+      }
+
+      hexRows.push(bytes);
+      byteMapping.push(byteMappingRow);
+    }
+
+    setHexDisplay(hexRows);
+    setByteToInputMap(byteMapping);
+  }, [input, gadgets, leftStartAddress, rightStartAddress]);
+
   if (!isFileOpen) {
     return (
       <>
@@ -425,6 +473,7 @@ export default function App() {
             setShowAutocomplete={setShowAutocomplete}
             gadgets={gadgets}
             onCheckGadget={handleCheckGadget}
+            parsedInput={parsedInput} /* 添加这一行 */
           />
 
           <HexPanel
@@ -439,6 +488,7 @@ export default function App() {
             onSelectedByteChange={handleSelectionByteChange}
             onHexDisplayChange={handleHexDisplayChange}
             gadgets={gadgets}
+            parsedInput={parsedInput} /* 添加这一行 */
           />
         </div>
       </div>

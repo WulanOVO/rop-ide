@@ -34,12 +34,19 @@
       pointer-events: none;
       z-index: 1;
 
+      span {
+        &.warning {
+          text-decoration: underline wavy #d29200 0.5px;
+        }
+      }
+
       .hex {
         color: #000;
+        font-weight: 500;
       }
 
       .other {
-        color: #666;
+        color: #777;
       }
 
       .comment {
@@ -47,20 +54,53 @@
         font-style: italic;
       }
 
+      .constant {
+        &.name {
+          color: #0b7285;
+        }
+
+        &.equal {
+          color: #333;
+        }
+
+        &.value {
+          color: #5c940d;
+        }
+      }
+
       .gadget {
-        color: #0066cc;
+        color: #1864ab;
         background-color: transparent;
         text-decoration: none;
 
         &.closed {
           border-radius: 2px;
-          background-color: #eff6fc;
-          text-decoration: underline;
+          background-color: #e7f5ff;
+          text-decoration: underline 1px;
         }
+      }
 
-        &.undefined {
-          color: #d83b01;
-          background-color: #ffe3e3;
+      .value {
+        color: #e67700;
+        background-color: transparent;
+        text-decoration: none;
+
+        &.closed {
+          border-radius: 2px;
+          background-color: #fff9db;
+          outline: 1px solid #ffe066;
+        }
+      }
+
+      .anchor {
+        color: #087f5b;
+        background-color: transparent;
+        text-decoration: none;
+
+        &.closed {
+          border-radius: 8px;
+          background-color: #e6fcf5;
+          outline: 1px solid #63e6be;
         }
       }
     }

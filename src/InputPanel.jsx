@@ -12,6 +12,7 @@ export default function InputPanel({
   setShowAutocomplete,
   gadgets,
   onCheckGadget,
+  parsedInput,
 }) {
   const [textareaRef, setTextareaRef] = useState(null);
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 });
@@ -57,26 +58,19 @@ export default function InputPanel({
 
   const findByte = useCallback(
     (start, end) => {
-      if (!byteToInputMap || !Array.isArray(byteToInputMap)) {
-        return null;
-      }
-
-      for (let rowIndex = 0; rowIndex < byteToInputMap.length; rowIndex++) {
-        const row = byteToInputMap[rowIndex];
+      for (let i = 0; i < byteToInputMap.length; i++) {
+        const row = byteToInputMap[i];
         if (!row) continue;
 
-        for (let byteIndex = 0; byteIndex < row.length; byteIndex++) {
-          const mapping = row[byteIndex];
-          if (!mapping) continue;
+        for (let j = 0; j < row.length; j++) {
+          const inputRange = row[j];
+          if (!inputRange) continue;
 
-          for (const char of mapping) {
-            if (char && char.inputIndex >= start && char.inputIndex < end) {
-              return { rowIndex, byteIndex };
-            }
+          if (inputRange.start <= start && inputRange.end >= end) {
+            return { rowIndex: i, byteIndex: j };
           }
         }
       }
-      return null;
     },
     [byteToInputMap]
   );
@@ -91,13 +85,13 @@ export default function InputPanel({
 
       if (start === end) {
         // 光标移动到某个位置（没有选择文本）
-        const found = findByte(start, start + 1);
+        const found = findByte(start, start);
         onSelectionInputChange(found);
         return;
       }
 
       // 选择了文本
-      const found = findByte(start, end);
+      const found = findByte(start, end - 1);
       onSelectionInputChange(found);
     },
     [findByte, onSelectionInputChange]
@@ -121,22 +115,10 @@ export default function InputPanel({
       ];
       if (navKeys.includes(e.key)) {
         const pos = e.target.selectionStart;
-        const found = findByte(pos, pos + 1);
+        const found = findByte(pos, pos);
         onSelectionInputChange(found);
         setCursorPosition({ start: pos, end: pos });
       }
-    },
-    [findByte, onSelectionInputChange, onClearSelection]
-  );
-
-  const handleClick = useCallback(
-    (e) => {
-      onClearSelection();
-
-      const pos = e.target.selectionStart;
-      const found = findByte(pos, pos + 1);
-      onSelectionInputChange(found);
-      setCursorPosition({ start: pos, end: pos });
     },
     [findByte, onSelectionInputChange, onClearSelection]
   );
@@ -295,6 +277,7 @@ export default function InputPanel({
           input={input}
           gadgets={gadgets}
           ref={highlightedContentRef}
+          parsedInput={parsedInput} /* 添加这一行 */
         />
         <textarea
           ref={setTextareaRef}
@@ -308,7 +291,6 @@ export default function InputPanel({
             });
           }}
           onSelect={handleTextareaSelect}
-          onClick={handleClick}
           onKeyUp={handleKeyUp}
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
@@ -331,113 +313,27 @@ export default function InputPanel({
   );
 }
 
-function HighlightedContent({ input, gadgets, ref }) {
-  const inputLines = input.split('\n');
-
-  const formatLine = (line, index) => {
-    if (line.trim() === '') return <br/>;
-
-    const spans = [];
-    let currentType = '';
-    let currentContent = '';
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-
-      // 注释
-      if (char === '/' && line[i + 1] === '/') {
-        if (i > 0) {
-          spans.push({ key: i, type: currentType, content: currentContent });
-        }
-        currentType = 'comment';
-        currentContent = line.substring(i);
-        break;
-      }
-
-      // gadget
-      else if (char === '#') {
-        if (i > 0) {
-          spans.push({ key: i, type: currentType, content: currentContent });
-        }
-        currentType = 'gadget';
-
-        // 向后寻找 ; 或空格结束 gadget
-        let j = i + 1;
-        while (j < line.length && line[j] !== ';' && line[j] !== ' ') {
-          j++;
-        }
-
-        currentContent = line.substring(i, j + 1);
-
-        // gadget 已闭合的情况
-        if (line[j] === ';') {
-          currentType += ',closed';
-
-          const gadgetName = currentContent.substring(
-            1,
-            currentContent.length - 1
-          );
-
-          const gadget = gadgets.find((g) => g.name === gadgetName);
-          if (!gadget) {
-            currentType += ',undefined';
-          }
-        }
-
-        i = j;
-      }
-
-      // 十六进制字符
-      else if (/[0-9a-fA-F]/.test(char)) {
-        if (i > 0) {
-          spans.push({ key: i, type: currentType, content: currentContent });
-        }
-        currentType = 'hex';
-
-        // 向后寻找非十六进制字符
-        let j = i + 1;
-        while (j < line.length && /[0-9a-fA-F ]/.test(line[j])) {
-          j++;
-        }
-
-        currentContent = line.substring(i, j);
-        i = j - 1;
-      }
-
-      // 其他字符
-      else {
-        if (currentType !== 'other') {
-          spans.push({ key: i, type: currentType, content: currentContent });
-          currentType = 'other';
-          currentContent = char;
-        } else {
-          currentContent += char;
-        }
-      }
-    }
-
-    spans.push({ key: -1, type: currentType, content: currentContent });
-
-    return (
-      <div key={index}>
-        {spans.map((span) => (
-          <span
-            key={span.key}
-            className={span.type
-              .split(',')
-              .map((t) => style[t])
-              .join(' ')}
-          >
-            {span.content}
-          </span>
-        ))}
-      </div>
-    );
-  };
+function HighlightedContent({ input, gadgets, ref, parsedInput }) {
+  const { highlightLines } = parsedInput
 
   return (
     <div className={style.highlightedContent} ref={ref}>
-      {inputLines.map((line, index) => formatLine(line, index))}
+      {highlightLines.map((spans, index) => (
+        <div key={index}>
+          {spans.length === 0 && <br />}
+          {spans.map((span, spanIndex) => (
+            <span
+              key={spanIndex}
+              className={span.type
+                .split(',')
+                .map((t) => style[t])
+                .join(' ')}
+            >
+              {span.content}
+            </span>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
