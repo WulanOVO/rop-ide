@@ -58,6 +58,14 @@
     &:hover {
       background-color: #1864ab;
     }
+
+    &.error {
+      background-color: #d29200;
+
+      &:hover {
+        background-color: #b87a00;
+      }
+    }
   }
 
   .hexDisplay {

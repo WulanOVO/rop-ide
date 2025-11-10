@@ -45,7 +45,12 @@ export default function App() {
   const [showGadgetManager, setShowGadgetManager] = useState(false);
   const [highlightedGadget, setHighlightedGadget] = useState(null);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
-  const [parsedInput, setParsedInput] = useState({ highlightLines: [], hexChars: '', charPosInInputMap: [] });
+  const [parsedInput, setParsedInput] = useState({
+    highlightLines: [],
+    hexChars: '',
+    charPosInInputMap: [],
+    errorCount: 0,
+  });
 
   const [messages, setMessages] = useState([]);
 
@@ -302,13 +307,14 @@ export default function App() {
 
   // 当输入或gadgets改变时重新解析输入
   useEffect(() => {
-    const { highlightLines, hexChars, charPosInInputMap } = parseRopInput(input, gadgets, {
-      leftStartAddress,
-      rightStartAddress,
-    });
+    const { highlightLines, hexChars, charPosInInputMap, errorCount } =
+      parseRopInput(input, gadgets, {
+        leftStartAddress,
+        rightStartAddress,
+      });
 
     // 更新解析后的数据
-    setParsedInput({ highlightLines, hexChars, charPosInInputMap });
+    setParsedInput({ highlightLines, hexChars, charPosInInputMap, errorCount });
 
     // 处理hexDisplay和byteToInputMap的更新
     let processedHexChars = hexChars.length > 0 ? hexChars : '00';
@@ -473,7 +479,7 @@ export default function App() {
             setShowAutocomplete={setShowAutocomplete}
             gadgets={gadgets}
             onCheckGadget={handleCheckGadget}
-            parsedInput={parsedInput} /* 添加这一行 */
+            parsedInput={parsedInput}
           />
 
           <HexPanel
@@ -488,7 +494,7 @@ export default function App() {
             onSelectedByteChange={handleSelectionByteChange}
             onHexDisplayChange={handleHexDisplayChange}
             gadgets={gadgets}
-            parsedInput={parsedInput} /* 添加这一行 */
+            parsedInput={parsedInput}
           />
         </div>
       </div>

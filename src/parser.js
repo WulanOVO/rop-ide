@@ -5,6 +5,7 @@ export function parseRopInput(input, gadgets, options = {}) {
   const charPosInInputMap = [];
   const highlightLines = [];
   const constants = {};
+  let errorCount = 0;
   let hexChars = '';
   let posInInput = 0;
 
@@ -54,6 +55,33 @@ export function parseRopInput(input, gadgets, options = {}) {
         const constantContent = line.substring(i, hasSemicolon ? j + 1 : j);
 
         if (hasSemicolon) {
+          const constantStr = line.substring(i + 1, j).replace(/\s+/g, '');
+          const parts = constantStr.split('=');
+
+          if (parts.length === 2) {
+            if (!/^-?[0-9a-fA-F]+$/.test(parts[1])) {
+              errorCount++;
+              pushSpan('constant,value,warning', constantContent);
+              i = j + 1;
+              continue;
+            }
+
+            let intValue = parseInt(parts[1], 16);
+
+            if (!isNaN(intValue) && intValue <= 0xffff && intValue >= -0x8000) {
+              if (intValue > 0xffff) {
+                intValue &= 0xffff; // 截取低16位
+              }
+            } else {
+              errorCount++;
+              pushSpan('constant,value,warning', constantContent);
+              i = j + 1;
+              continue;
+            }
+
+            constants[parts[0]] = intValue;
+          }
+
           const partsForHighlight = constantContent.split(/(\s*=\s*)/);
           if (partsForHighlight.length === 3) {
             pushSpan('constant,name', partsForHighlight[0]);
@@ -64,20 +92,11 @@ export function parseRopInput(input, gadgets, options = {}) {
             );
             pushSpan('', ';');
           } else {
+            errorCount++;
             pushSpan('constant,name,warning', constantContent);
           }
-
-          // 解析并记录常量值（用于后续 [ ... ] 求值）
-          const constantStr = line.substring(i + 1, j).replace(/\s+/g, '');
-          const parts = constantStr.split('=');
-          if (parts.length === 2) {
-            let constantValue = parseInt(parts[1], 16);
-            if (!isNaN(constantValue)) {
-              if (constantValue > 0xffff) constantValue &= 0xffff; // 截取低16位
-              constants[parts[0]] = constantValue;
-            }
-          }
         } else {
+          errorCount++;
           pushSpan('constant,name', constantContent);
         }
 
@@ -99,6 +118,7 @@ export function parseRopInput(input, gadgets, options = {}) {
 
           const gadget = gadgets.find((g) => g.name === gadgetName);
           if (!gadget) {
+            errorCount++;
             pushSpan('gadget,warning', gadgetContent);
           } else {
             pushSpan('gadget,closed', gadgetContent);
@@ -134,7 +154,7 @@ export function parseRopInput(input, gadgets, options = {}) {
           const inner = line.substring(i + 1, j);
 
           let value = 0x0000;
-          let symbol = '';
+          let symbol = '+';
           let hasErrors = false;
 
           // 计算数值块的实际值
@@ -150,31 +170,40 @@ export function parseRopInput(input, gadgets, options = {}) {
                 } else if (symbol === '-') {
                   value -= constantValue;
                 } else {
-                  if (value === 0x0000) {
-                    value = constantValue;
-                  } else {
-                    hasErrors = true;
-                    break;
-                  }
+                  errorCount++;
+                  hasErrors = true;
+                  break;
                 }
               } else {
+                errorCount++;
                 hasErrors = true;
                 break;
               }
+
+              symbol = '';
             } else if (part === '+' || part === '-') {
-              symbol = part;
+              if (symbol === '') {
+                symbol = part;
+              } else {
+                errorCount++;
+                hasErrors = true;
+                break;
+              }
             } else {
+              if (!/^-?[0-9a-fA-F]+$/.test(part)) {
+                errorCount++;
+                hasErrors = true;
+                break;
+              }
+
               if (symbol === '+') {
                 value += parseInt(part, 16);
               } else if (symbol === '-') {
                 value -= parseInt(part, 16);
               } else {
-                if (value === 0x0000) {
-                  value = parseInt(part, 16);
-                } else {
-                  hasErrors = true;
-                  break;
-                }
+                errorCount++;
+                hasErrors = true;
+                break;
               }
               symbol = '';
             }
@@ -182,11 +211,18 @@ export function parseRopInput(input, gadgets, options = {}) {
 
           if (symbol !== '') {
             hasErrors = true;
-          }
-
-          if (!isNaN(value)) {
-            if (value > 0xffff) value &= 0xffff; // 截取低16位
+          } else if (!isNaN(value)) {
+            if (value > 0xffff || value < -0x8000) {
+              hasErrors = true;
+            }
+            if (value < 0) {
+              value = 0xffff + value + 1; // 负值处理
+            }
+            if (value > 0xffff) {
+              value &= 0xffff; // 截取低16位
+            }
           } else {
+            errorCount++;
             hasErrors = true;
           }
 
@@ -264,7 +300,7 @@ export function parseRopInput(input, gadgets, options = {}) {
       // 其他字符
       else {
         let j = i + 1;
-        while (j < line.length && !/[0-9a-fA-F\s]/.test(line[j])) j++;
+        while (j < line.length && !/[0-9a-fA-F\$#\[\<\s]/.test(line[j])) j++;
         const otherContent = line.substring(i, j);
         pushSpan('other', otherContent);
         i = j;
@@ -275,5 +311,5 @@ export function parseRopInput(input, gadgets, options = {}) {
     posInInput += line.length + 1; // +1 换行符
   });
 
-  return { hexChars, charPosInInputMap, highlightLines };
+  return { hexChars, charPosInInputMap, highlightLines, errorCount };
 }

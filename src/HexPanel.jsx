@@ -66,7 +66,6 @@ export default function HexPanel({
   rightStartAddress,
   setLeftStartAddress,
   setRightStartAddress,
-  gadgets,
   parsedInput,
 }) {
   const [copyBtnText, setCopyBtnText] = useState('复制');
@@ -88,6 +87,10 @@ export default function HexPanel({
   }, []);
 
   const copyHexContent = useCallback(() => {
+    if (parsedInput.errorCount > 0) {
+      alert(`存在${parsedInput.errorCount}个语法错误，建议检查`);
+    }
+
     const hexContent = hexDisplay.map((row) => row.join(' ')).join('\n');
 
     navigator.clipboard.writeText(hexContent).then(() => {
@@ -243,7 +246,9 @@ export default function HexPanel({
           />
         </div>
         <button
-          className={style.copyButton}
+          className={`${style.copyButton} ${
+            parsedInput.errorCount > 0 ? style.error : ''
+          }`}
           onClick={copyHexContent}
           title="复制全部十六进制内容 (Ctrl+Alt+C)"
         >
