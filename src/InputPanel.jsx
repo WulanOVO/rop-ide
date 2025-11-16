@@ -23,38 +23,8 @@ export default function InputPanel({
     left: 0,
   });
 
-  const highlightedContentRef = useRef(null);
+  const highlightContentRef = useRef(null);
   const editorRef = useRef(null);
-
-  // 滚动输入框到选中位置
-  const scrollTextareaToSelection = useCallback(
-    (position) => {
-      if (!editorRef.current) return;
-
-      // 获取当前行的位置
-      const text = input;
-      const lines = text.substr(0, position).split('\n');
-      const lineIndex = lines.length - 1;
-
-      // 计算行高（近似值）
-      const lineHeight = 20; // 假设每行高度为20px
-
-      // 计算滚动位置，使选中行在视图中间
-      const scrollPosition =
-        lineIndex * lineHeight -
-        editorRef.current.clientHeight / 2 +
-        lineHeight;
-
-      // 确保滚动位置在有效范围内
-      const maxScroll =
-        editorRef.current.scrollHeight - editorRef.current.clientHeight;
-      const targetScroll = Math.max(0, Math.min(scrollPosition, maxScroll));
-
-      // 平滑滚动到目标位置
-      editorRef.current.scrollTop = targetScroll;
-    },
-    [input]
-  );
 
   const findByte = useCallback(
     (start, end) => {
@@ -125,9 +95,9 @@ export default function InputPanel({
 
   const handleScroll = useCallback(
     (e) => {
-      if (highlightedContentRef.current && textareaRef) {
-        highlightedContentRef.current.scrollTop = e.target.scrollTop;
-        highlightedContentRef.current.scrollLeft = e.target.scrollLeft;
+      if (highlightContentRef.current && textareaRef) {
+        highlightContentRef.current.scrollTop = e.target.scrollTop;
+        highlightContentRef.current.scrollLeft = e.target.scrollLeft;
       }
 
       // 更新autocomplete面板的位置
@@ -149,9 +119,18 @@ export default function InputPanel({
     textareaRef.setSelectionRange(start, end);
     setCursorPosition({ start, end });
 
-    // 滚动输入框到选中位置
-    scrollTextareaToSelection(start);
-  }, [selectedInput, textareaRef, scrollTextareaToSelection]);
+    // 确保光标位置可见
+    requestAnimationFrame(() => {
+      const { top } = getCursorPosition(textareaRef, end);
+      const lineHeight = parseFloat(window.getComputedStyle(textareaRef).lineHeight) || 16;
+      const buffer = lineHeight;
+      if (top < 0) {
+        textareaRef.scrollTop += top - buffer;
+      } else if (top > textareaRef.clientHeight - lineHeight) {
+        textareaRef.scrollTop += top - textareaRef.clientHeight + buffer;
+      }
+    });
+  }, [selectedInput, textareaRef]);
 
   const handleAutocomplete = (text) => {
     const cursorPos = textareaRef.selectionStart;
@@ -273,10 +252,8 @@ export default function InputPanel({
   return (
     <div className={style.inputPanel} ref={editorRef}>
       <div className={style.codeEditorContainer}>
-        <HighlightedContent
-          input={input}
-          gadgets={gadgets}
-          ref={highlightedContentRef}
+        <HighlightContent
+          ref={highlightContentRef}
           parsedInput={parsedInput} /* 添加这一行 */
         />
         <textarea
@@ -313,11 +290,11 @@ export default function InputPanel({
   );
 }
 
-function HighlightedContent({ input, gadgets, ref, parsedInput }) {
-  const { highlightLines } = parsedInput
+function HighlightContent({ ref, parsedInput }) {
+  const { highlightLines } = parsedInput;
 
   return (
-    <div className={style.highlightedContent} ref={ref}>
+    <div className={style.highlightContent} ref={ref}>
       {highlightLines.map((spans, index) => (
         <div key={index}>
           {spans.length === 0 && <br />}

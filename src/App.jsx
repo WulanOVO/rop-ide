@@ -376,7 +376,7 @@ export default function App() {
 
           <div className={style.footer}>
             <p>
-              在找 shengyuyou2008 的项目吗？
+              在找 xe1010ce20 的项目吗？
               <a
                 href="https://rop-ide.pages.dev"
                 target="_blank"

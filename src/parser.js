@@ -9,24 +9,111 @@ export function parseRopInput(input, gadgets, options = {}) {
   let hexChars = '';
   let posInInput = 0;
 
+  // 记录需要在解析结束后回填的数值块（用于支持前向引用常量/锚点）
+  const deferredValuePatches = [];
+  const deferredHighlightPatches = [];
+
+  // 二次求值函数：根据最终 constants 计算表达式值
+  const evalExpression = (
+    inner,
+    constants,
+    allowUndefinedAsDeferred = false
+  ) => {
+    let value = 0x0000;
+    let symbol = '+';
+    let hasErrors = false;
+    let deferred = false;
+
+    const parts = inner.split(' ').filter(Boolean);
+    for (const part of parts) {
+      if (part.startsWith('$')) {
+        const constantName = part.substring(1);
+        const constantValue = constants[constantName];
+
+        if (constantValue !== undefined) {
+          if (symbol === '+') {
+            value += constantValue;
+          } else if (symbol === '-') {
+            value -= constantValue;
+          } else {
+            hasErrors = true;
+            break;
+          }
+        } else {
+          if (allowUndefinedAsDeferred) {
+            deferred = true;
+            if (symbol === '+') {
+              value += 0;
+            } else if (symbol === '-') {
+              value -= 0;
+            } else {
+              hasErrors = true;
+              break;
+            }
+          } else {
+            hasErrors = true;
+            break;
+          }
+        }
+
+        symbol = '';
+      } else if (part === '+' || part === '-') {
+        if (symbol === '') {
+          symbol = part;
+        } else {
+          hasErrors = true;
+          break;
+        }
+      } else {
+        if (!/^-?[0-9a-fA-F]+$/.test(part)) {
+          hasErrors = true;
+          break;
+        }
+
+        if (symbol === '+') {
+          value += parseInt(part, 16);
+        } else if (symbol === '-') {
+          value -= parseInt(part, 16);
+        } else {
+          hasErrors = true;
+          break;
+        }
+        symbol = '';
+      }
+    }
+
+    if (symbol !== '') {
+      hasErrors = true;
+    } else if (!isNaN(value)) {
+      if (value > 0xffff || value < -0x8000) {
+        hasErrors = true;
+      }
+      if (value < 0) {
+        value = 0xffff + value + 1; // 负值处理
+      }
+      if (value > 0xffff) {
+        value &= 0xffff; // 截取低16位
+      }
+    } else {
+      hasErrors = true;
+    }
+
+    return { value, hasErrors, deferred };
+  };
+
   const pushHexChars = (hex, startPosInLine, endPosInLine, repeatBytes) => {
-    // 在写入 gadget 或数值块时，按需要补齐半字节对齐
-    if (hex) {
-      if (hexChars.length % 2 !== 0) {
-        hexChars += '0';
-      }
+    if (!hex) return;
 
-      hexChars += hex.toUpperCase();
+    hexChars += hex.toUpperCase();
 
-      // 为每个生成的字节写入映射（每字节两个十六进制字符）
-      for (let k = 0; k < repeatBytes; k++) {
-        charPosInInputMap.push(startPosInLine);
-        charPosInInputMap.push(endPosInLine);
-      }
+    // 为每个生成的字节写入映射（每字节两个十六进制字符）
+    for (let k = 0; k < repeatBytes; k++) {
+      charPosInInputMap.push(startPosInLine);
+      charPosInInputMap.push(endPosInLine);
     }
   };
 
-  lines.forEach((line) => {
+  lines.forEach((line, lineIndex) => {
     const lineStartPosInInput = posInInput;
     const spans = [];
 
@@ -59,22 +146,27 @@ export function parseRopInput(input, gadgets, options = {}) {
           const parts = constantStr.split('=');
 
           if (parts.length === 2) {
-            if (!/^-?[0-9a-fA-F]+$/.test(parts[1])) {
-              errorCount++;
-              pushSpan('constant,value,warning', constantContent);
-              i = j + 1;
-              continue;
-            }
-
             let intValue = parseInt(parts[1], 16);
 
-            if (!isNaN(intValue) && intValue <= 0xffff && intValue >= -0x8000) {
+            if (
+              /^-?[0-9a-fA-F]+$/.test(parts[1]) &&
+              !isNaN(intValue) &&
+              intValue <= 0xffff &&
+              intValue >= -0x8000
+            ) {
               if (intValue > 0xffff) {
                 intValue &= 0xffff; // 截取低16位
               }
             } else {
               errorCount++;
               pushSpan('constant,value,warning', constantContent);
+              i = j + 1;
+              continue;
+            }
+
+            if (constants[parts[0]] !== undefined) {
+              errorCount++;
+              pushSpan('constant,name,warning', constantContent);
               i = j + 1;
               continue;
             }
@@ -152,79 +244,10 @@ export function parseRopInput(input, gadgets, options = {}) {
 
         if (hasBracket) {
           const inner = line.substring(i + 1, j);
-
-          let value = 0x0000;
-          let symbol = '+';
-          let hasErrors = false;
-
-          // 计算数值块的实际值
-          const parts = inner.split(' ').filter(Boolean);
-          for (const part of parts) {
-            if (part.startsWith('$')) {
-              const constantName = part.substring(1);
-              const constantValue = constants[constantName];
-
-              if (constantValue !== undefined) {
-                if (symbol === '+') {
-                  value += constantValue;
-                } else if (symbol === '-') {
-                  value -= constantValue;
-                } else {
-                  errorCount++;
-                  hasErrors = true;
-                  break;
-                }
-              } else {
-                errorCount++;
-                hasErrors = true;
-                break;
-              }
-
-              symbol = '';
-            } else if (part === '+' || part === '-') {
-              if (symbol === '') {
-                symbol = part;
-              } else {
-                errorCount++;
-                hasErrors = true;
-                break;
-              }
-            } else {
-              if (!/^-?[0-9a-fA-F]+$/.test(part)) {
-                errorCount++;
-                hasErrors = true;
-                break;
-              }
-
-              if (symbol === '+') {
-                value += parseInt(part, 16);
-              } else if (symbol === '-') {
-                value -= parseInt(part, 16);
-              } else {
-                errorCount++;
-                hasErrors = true;
-                break;
-              }
-              symbol = '';
-            }
-          }
-
-          if (symbol !== '') {
-            hasErrors = true;
-          } else if (!isNaN(value)) {
-            if (value > 0xffff || value < -0x8000) {
-              hasErrors = true;
-            }
-            if (value < 0) {
-              value = 0xffff + value + 1; // 负值处理
-            }
-            if (value > 0xffff) {
-              value &= 0xffff; // 截取低16位
-            }
-          } else {
-            errorCount++;
-            hasErrors = true;
-          }
+          const firstPass = evalExpression(inner, constants, true);
+          let value = firstPass.value;
+          let hasErrors = firstPass.hasErrors;
+          let deferred = firstPass.deferred || /\$/.test(inner);
 
           if (hasErrors) {
             pushSpan('value,closed,warning', valueContent);
@@ -237,12 +260,28 @@ export function parseRopInput(input, gadgets, options = {}) {
           const addrStr = value.toString(16).toUpperCase().padStart(4, '0');
           const littleEndian = addrStr.slice(2, 4) + addrStr.slice(0, 2);
 
-          pushHexChars(
-            littleEndian,
-            charPosInInput,
-            lineStartPosInInput + j,
-            2
-          );
+          if (!deferred) {
+            pushHexChars(
+              littleEndian,
+              charPosInInput,
+              lineStartPosInInput + j,
+              2
+            );
+          } else {
+            deferredValuePatches.push({
+              startHexIndex: hexChars.length,
+              endHexIndex: hexChars.length,
+              expression: inner,
+              startPosInLine: charPosInInput,
+              endPosInLine: lineStartPosInInput + j,
+              bytesToInsert: 2,
+            });
+            deferredHighlightPatches.push({
+              lineIndex,
+              spanIndex: spans.length - 1,
+              expression: inner,
+            });
+          }
         } else {
           pushSpan('value', valueContent);
         }
@@ -282,15 +321,14 @@ export function parseRopInput(input, gadgets, options = {}) {
         let j = i + 1;
         while (j < line.length && /[0-9a-fA-F\s]/.test(line[j])) j++;
 
-        const hexContent = line.substring(i, j);
+        let hexContent = line.substring(i, j);
         pushSpan('hex', hexContent);
 
-        // 仅将其中的十六进制字符写入 hex 流，并建立一一映射
-        for (let t = i; t < j; t++) {
-          const c = line[t];
+        for (let k = i; k < j; k++) {
+          const c = line[k];
           if (/[0-9a-fA-F]/.test(c)) {
             hexChars += c.toUpperCase();
-            charPosInInputMap.push(lineStartPosInInput + t);
+            charPosInInputMap.push(lineStartPosInInput + k);
           }
         }
 
@@ -300,7 +338,7 @@ export function parseRopInput(input, gadgets, options = {}) {
       // 其他字符
       else {
         let j = i + 1;
-        while (j < line.length && !/[0-9a-fA-F\$#\[\<\s]/.test(line[j])) j++;
+        while (j < line.length && !/[0-9a-fA-F\/\$#\[<]/.test(line[j])) j++;
         const otherContent = line.substring(i, j);
         pushSpan('other', otherContent);
         i = j;
@@ -310,6 +348,54 @@ export function parseRopInput(input, gadgets, options = {}) {
     highlightLines.push(spans);
     posInInput += line.length + 1; // +1 换行符
   });
+
+  // 二次阶段：按位置顺序插入延迟字节，保证顺序稳定
+  {
+    let insertedHexCount = 0;
+    const patchesSorted = deferredValuePatches.slice().sort((a, b) => a.startHexIndex - b.startHexIndex);
+    for (const patch of patchesSorted) {
+      const { value, hasErrors } = evalExpression(patch.expression, constants, false);
+      if (hasErrors) {
+        errorCount++;
+        continue;
+      }
+      const addrStr = value.toString(16).toUpperCase().padStart(4, '0');
+      const littleEndian = addrStr.slice(2, 4) + addrStr.slice(0, 2);
+      const insertPos = patch.startHexIndex + insertedHexCount;
+
+      hexChars =
+        hexChars.substring(0, insertPos) +
+        littleEndian +
+        hexChars.substring(insertPos);
+
+      insertedHexCount += littleEndian.length;
+
+      if (Array.isArray(charPosInInputMap)) {
+        const mapping = [];
+        for (let k = 0; k < (patch.bytesToInsert || 2); k++) {
+          mapping.push(patch.startPosInLine);
+          mapping.push(patch.endPosInLine);
+        }
+        charPosInInputMap.splice(
+          insertPos,
+          0,
+          ...mapping
+        );
+      }
+    }
+  }
+
+  for (const h of deferredHighlightPatches) {
+    const { hasErrors } = evalExpression(h.expression, constants, false);
+    if (hasErrors) {
+      const span = highlightLines[h.lineIndex]?.[h.spanIndex];
+      if (span) {
+        span.type = span.type.includes('warning')
+          ? span.type
+          : `${span.type},warning`;
+      }
+    }
+  }
 
   return { hexChars, charPosInInputMap, highlightLines, errorCount };
 }
