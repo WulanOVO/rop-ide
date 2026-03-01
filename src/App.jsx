@@ -131,6 +131,7 @@ export default function App() {
 
   const handleFileNameChange = (e) => {
     setCurrentFileName(e.target.value);
+    setIsDirty(true);
   };
 
   const saveFile = async () => {
@@ -235,6 +236,16 @@ export default function App() {
     },
     []
   );
+
+  const handleLeftAddrChange = useCallback((newAddr) => {
+    setLeftStartAddress(newAddr);
+    setIsDirty(true);
+  }, []);
+
+  const handleRightAddrChange = useCallback((newAddr) => {
+    setRightStartAddress(newAddr);
+    setIsDirty(true);
+  }, []);
 
   const handleGadgetsUpdate = useCallback((updatedGadgets) => {
     setGadgets(updatedGadgets);
@@ -364,7 +375,7 @@ export default function App() {
 
         <div className={style.welcomeContainer}>
           <h1>欢迎使用 RopIDE</h1>
-          <p>开始一个新的项目或打开一个现有的项目</p>
+          <p className={style.welcomeInfo}>开始一个新的项目或打开一个现有的项目</p>
           <div className={style.buttonContainer}>
             <button className={style.welcomeButton} onClick={createNewFile}>
               创建新文件
@@ -386,7 +397,7 @@ export default function App() {
               </a>
             </p>
             <p>
-              &copy; {new Date().getFullYear()}
+              Copyright &copy; {new Date().getFullYear()}
               <a
                 href="https://github.com/WulanOVO/rop-ide"
                 target="_blank"
@@ -394,7 +405,7 @@ export default function App() {
               >
                 RopIDE
               </a>
-              保留所有权利
+              &nbsp; @wlyibo
             </p>
           </div>
         </div>
@@ -489,8 +500,8 @@ export default function App() {
             byteToInputMap={byteToInputMap}
             leftStartAddress={leftStartAddress}
             rightStartAddress={rightStartAddress}
-            setLeftStartAddress={setLeftStartAddress}
-            setRightStartAddress={setRightStartAddress}
+            onLeftAddrChange={handleLeftAddrChange}
+            onRightAddrChange={handleRightAddrChange}
             onSelectedByteChange={handleSelectionByteChange}
             onHexDisplayChange={handleHexDisplayChange}
             gadgets={gadgets}

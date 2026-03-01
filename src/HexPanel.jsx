@@ -64,25 +64,25 @@ export default function HexPanel({
   onHexDisplayChange,
   leftStartAddress,
   rightStartAddress,
-  setLeftStartAddress,
-  setRightStartAddress,
+  onLeftAddrChange,
+  onRightAddrChange,
   parsedInput,
 }) {
   const [copyBtnText, setCopyBtnText] = useState('复制');
 
-  const handleLeftAddressChange = useCallback((e) => {
+  const handleLeftAddrChange = useCallback((e) => {
     const value = e.target.value.toUpperCase();
 
     if (/^[0-9A-F]{0,4}$/.test(value)) {
-      setLeftStartAddress(value);
+      onLeftAddrChange(value);
     }
   }, []);
 
-  const handleRightAddressChange = useCallback((e) => {
+  const handleRightAddrChange = useCallback((e) => {
     const value = e.target.value.toUpperCase();
 
     if (/^[0-9A-F]{0,4}$/.test(value)) {
-      setRightStartAddress(value);
+      onRightAddrChange(value);
     }
   }, []);
 
@@ -234,7 +234,7 @@ export default function HexPanel({
           <input
             className={style.addressInput}
             value={leftStartAddress}
-            onChange={handleLeftAddressChange}
+            onChange={handleLeftAddrChange}
           />
         </div>
         <div className={style.addressInputContainer}>
@@ -242,7 +242,7 @@ export default function HexPanel({
           <input
             className={style.addressInput}
             value={rightStartAddress}
-            onChange={handleRightAddressChange}
+            onChange={handleRightAddrChange}
           />
         </div>
         <button

@@ -15,14 +15,16 @@ html {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f4f4f4;
+  background-color: #f6f6f6;
 
   h1 {
+    font-family: serif;
     font-size: 2.5em;
     margin-bottom: 10px;
   }
 
-  p {
+  .welcomeInfo {
+    font-family: serif;
     color: #333;
     font-size: 1.2em;
     margin-bottom: 15px;
@@ -32,10 +34,11 @@ html {
     margin: 20px 0 40px;
 
     .welcomeButton {
-      background-color: #ddd;
+      background-color: #e0e0e0;
       color: #333;
       border: none;
-      padding: 15px 30px;
+      padding: 15px;
+      width: 8em;
       margin: 0 10px;
       font-size: 1.2em;
       cursor: pointer;
@@ -43,7 +46,7 @@ html {
       transition: background-color 0.3s;
 
       &:hover {
-        background-color: #ccc;
+        background-color: #d0d0d0;
       }
     }
   }

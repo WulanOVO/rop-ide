@@ -85,14 +85,14 @@ export function parseRopInput(input, gadgets, options = {}) {
     if (symbol !== '') {
       hasErrors = true;
     } else if (!isNaN(value)) {
-      if (value > 0xffff || value < -0x8000) {
+      if (
+        !(allowUndefinedAsDeferred && deferred) &&
+        (value > 0xffff || value < -0x8000)
+      ) {
         hasErrors = true;
       }
       if (value < 0) {
         value = 0xffff + value + 1; // 负值处理
-      }
-      if (value > 0xffff) {
-        value &= 0xffff; // 截取低16位
       }
     } else {
       hasErrors = true;
@@ -307,7 +307,16 @@ export function parseRopInput(input, gadgets, options = {}) {
             anchorName = anchorName.substring(1);
             addrStart = parseInt(leftStartAddress || '0', 16);
           }
-          const addr = addrStart + Math.ceil(hexChars.length / 2);
+          let deferredBytesBeforeAnchor = 0;
+          for (const p of deferredValuePatches) {
+            if (p.startHexIndex <= hexChars.length) {
+              deferredBytesBeforeAnchor += p.bytesToInsert || 2;
+            }
+          }
+          const addr =
+            addrStart +
+            Math.ceil(hexChars.length / 2) +
+            deferredBytesBeforeAnchor;
           constants[anchorName] = addr;
         } else {
           pushSpan('anchor', anchorContent);
@@ -352,9 +361,15 @@ export function parseRopInput(input, gadgets, options = {}) {
   // 二次阶段：按位置顺序插入延迟字节，保证顺序稳定
   {
     let insertedHexCount = 0;
-    const patchesSorted = deferredValuePatches.slice().sort((a, b) => a.startHexIndex - b.startHexIndex);
+    const patchesSorted = deferredValuePatches
+      .slice()
+      .sort((a, b) => a.startHexIndex - b.startHexIndex);
     for (const patch of patchesSorted) {
-      const { value, hasErrors } = evalExpression(patch.expression, constants, false);
+      const { value, hasErrors } = evalExpression(
+        patch.expression,
+        constants,
+        false
+      );
       if (hasErrors) {
         errorCount++;
         continue;
@@ -376,11 +391,7 @@ export function parseRopInput(input, gadgets, options = {}) {
           mapping.push(patch.startPosInLine);
           mapping.push(patch.endPosInLine);
         }
-        charPosInInputMap.splice(
-          insertPos,
-          0,
-          ...mapping
-        );
+        charPosInInputMap.splice(insertPos, 0, ...mapping);
       }
     }
   }

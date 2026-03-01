@@ -122,7 +122,8 @@ export default function InputPanel({
     // 确保光标位置可见
     requestAnimationFrame(() => {
       const { top } = getCursorPosition(textareaRef, end);
-      const lineHeight = parseFloat(window.getComputedStyle(textareaRef).lineHeight) || 16;
+      const lineHeight =
+        parseFloat(window.getComputedStyle(textareaRef).lineHeight) || 16;
       const buffer = lineHeight;
       if (top < 0) {
         textareaRef.scrollTop += top - buffer;
@@ -238,24 +239,66 @@ export default function InputPanel({
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedSuggestionIndex((prevIndex) => Math.max(prevIndex - 1, 0));
-      } else if (e.key === 'Enter' || e.key === 'Tab') {
+      } else if (e.key === 'Enter') {
         e.preventDefault();
         if (suggestions[selectedSuggestionIndex]) {
           handleSuggestionSelect(suggestions[selectedSuggestionIndex]);
         }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        if (suggestions[selectedSuggestionIndex]) {
+          handleSuggestionSelect(suggestions[selectedSuggestionIndex]);
+        } else {
+          handleTabKey();
+        }
       } else if (e.key === 'Escape') {
         setShowAutocomplete(false);
       }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      handleTabKey();
+    }
+  };
+
+  const handleTabKey = () => {
+    if (!textareaRef) return;
+
+    const text = input || '';
+    const cursorPos = textareaRef.selectionStart;
+
+    const lineStart = text.lastIndexOf('\n', cursorPos - 1) + 1;
+
+    const currentCol = cursorPos - lineStart;
+    const beforeCurrent = text.substring(0, lineStart);
+    const lines = beforeCurrent.split('\n');
+    let targetCol = null;
+
+    const LOOKBACK = 50;
+    for (let i = lines.length - 2, tried = 0; i >= 0 && tried < LOOKBACK; i--, tried++) {
+      const line = lines[i];
+      const match = line.match(/\/\/.*$/);
+      if (match) {
+        const col = match.index;
+        if (col > currentCol) {
+          targetCol = col;
+          break;
+        }
+      }
+    }
+
+    textareaRef.focus();
+    if (targetCol != null) {
+      const spaces = ' '.repeat(targetCol - currentCol);
+      document.execCommand('insertText', false, spaces);
+    } else {
+      document.execCommand('insertText', false, '  ');
     }
   };
 
   return (
     <div className={style.inputPanel} ref={editorRef}>
       <div className={style.codeEditorContainer}>
-        <HighlightContent
-          ref={highlightContentRef}
-          parsedInput={parsedInput} /* 添加这一行 */
-        />
+        <HighlightContent ref={highlightContentRef} parsedInput={parsedInput} />
         <textarea
           ref={setTextareaRef}
           value={input}
