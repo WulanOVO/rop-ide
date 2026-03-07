@@ -1,37 +1,37 @@
-@use './mixins';
+@use 'variables' as v;
+@use 'mixins' as m;
 
 .inputPanel {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  @include m.flex-column;
   position: relative;
   width: 90vw;
-  height: 90vh;
   min-width: 400px;
+  height: 90vh;
 
   .codeEditorContainer {
     position: relative;
+    overflow: hidden;
     flex: 1;
     height: 100%;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    overflow: hidden;
+    border: 1px solid v.$border-color;
+    border-radius: v.$border-radius;
 
     &:focus-within {
-      border-color: #333;
+      border-color: v.$gray-800;
     }
 
     .highlightContent {
       position: absolute;
+      z-index: 1;
+      overflow: auto;
       width: 100%;
       height: 100%;
       padding: 0.75rem;
-      font-family: 'consolas', monospace;
+      font-family: v.$font-family-monospace;
       font-size: 1rem;
       white-space: pre;
-      overflow: auto;
       pointer-events: none;
-      z-index: 1;
 
       span {
         &.warning {
@@ -40,7 +40,7 @@
       }
 
       .hex {
-        color: #000;
+        color: v.$black;
         font-weight: 500;
       }
 
@@ -59,7 +59,7 @@
         }
 
         &.equal {
-          color: #333;
+          color: v.$gray-800;
         }
 
         &.value {
@@ -68,38 +68,38 @@
       }
 
       .gadget {
-        color: #1864ab;
         background-color: transparent;
+        color: #1864ab;
         text-decoration: none;
 
         &.closed {
           border-radius: 2px;
-          background-color: #e7f5ff;
+          background-color: v.$primary-light;
           text-decoration: underline 1px;
         }
       }
 
       .value {
-        color: #e67700;
         background-color: transparent;
+        color: #e67700;
         text-decoration: none;
 
         &.closed {
           border-radius: 2px;
-          background-color: #fff9db;
           outline: 1px solid #ffe066;
+          background-color: #fff9db;
         }
       }
 
       .anchor {
-        color: #087f5b;
         background-color: transparent;
+        color: #087f5b;
         text-decoration: none;
 
         &.closed {
           border-radius: 8px;
-          background-color: #e6fcf5;
           outline: 1px solid #63e6be;
+          background-color: #e6fcf5;
         }
       }
     }
@@ -107,19 +107,19 @@
 
   .codeInput {
     position: absolute;
+    z-index: 2;
+    overflow: auto;
     width: 100%;
     height: 100%;
     padding: 0.75rem;
-    font-family: 'consolas', monospace;
-    font-size: 1rem;
-    color: transparent;
-    background: transparent;
-    white-space: pre;
-    caret-color: #000;
-    resize: none;
-    z-index: 2;
     border: none;
-    overflow: auto;
+    background: transparent;
+    color: transparent;
+    font-family: v.$font-family-monospace;
+    font-size: 1rem;
+    white-space: pre;
+    resize: none;
+    caret-color: v.$black;
 
     &:focus {
       outline: none;
@@ -133,86 +133,70 @@
 
 .autocompletePanel {
   position: absolute;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  max-height: 190px;
+  z-index: v.$z-index-dropdown;
   overflow-y: auto;
+  max-height: 190px;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius;
+  background-color: v.$gray-100; // #f0f0f0
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #f0f0f0;
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-
-    &:hover {
-      background: #bbb;
-    }
-  }
+  @include m.scrollbar;
 
   .suggestionItem {
     display: flex;
+    display: flex;
+    align-items: center;
     padding: 6px 10px;
     font-size: 0.9rem;
     cursor: pointer;
-    display: flex;
     gap: 0.4rem;
-    align-items: center;
 
     &:hover {
-      background-color: #e0e0e0;
+      background-color: v.$gray-200; // #e0e0e0
     }
 
     &.selected {
-      background-color: #d0d0d0;
+      background-color: v.$gray-400; // #d0d0d0
     }
 
     .name {
+      color: v.$gray-800;
       font-weight: bold;
-      color: #333;
     }
 
     .addr {
       color: #888;
-      font-style: italic;
       font-size: 0.7rem;
+      font-style: italic;
       text-decoration: underline;
     }
 
     .tag {
-      @include mixins.tag;
+      @include m.tag;
     }
 
     .desc {
       margin-left: auto;
       padding-left: 0.5rem;
-      color: #666;
+      color: v.$gray-600;
       font-size: 0.9em;
     }
 
     .arrowButton {
-      background: none;
+      margin-left: 0;
+      padding: 0 5px;
       border: none;
       border-radius: 2px;
-      cursor: pointer;
+      background: none;
+      color: v.$gray-600;
       font-size: 1rem;
-      padding: 0 5px;
-      margin-left: 0;
-      color: #666;
+      cursor: pointer;
       transition: background-color 0.2s ease-in-out;
 
       &:hover {
-        color: #000;
-        background-color: #d0d0d0;
+        background-color: v.$gray-400; // #d0d0d0
+        color: v.$black;
       }
     }
   }

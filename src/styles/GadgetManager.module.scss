@@ -1,59 +1,31 @@
-@use './mixins';
-
-@mixin button {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9em;
-  transition: all 0.2s ease;
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
-}
+@use 'variables' as v;
+@use 'mixins' as m;
 
 .overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 20px;
-  overflow: auto;
+  @include m.overlay;
 }
 
 .managerPanel {
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: v.$gray-100;
+  border-radius: v.$border-radius-lg;
   width: 90%;
   max-width: 1200px;
   height: 90vh;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  @include m.flex-column;
+  box-shadow: v.$box-shadow-lg;
 
   .header {
     padding: 20px;
-    background: #e9ecef;
-    border-bottom: 1px solid #dee2e6;
+    background: v.$gray-200;
+    border-bottom: 1px solid v.$gray-300;
     display: flex;
     justify-content: space-between;
     align-items: center;
 
     h2 {
       margin: 0;
-      color: #343a40;
+      color: v.$gray-800;
     }
 
     .panelActions {
@@ -73,18 +45,8 @@
     width: 200px;
 
     .searchInput {
+      @include m.input-base;
       width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-size: 1em;
-      box-sizing: border-box;
-
-      &:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-      }
     }
   }
 
@@ -100,12 +62,9 @@
 }
 
 .gadgetCard {
+  @include m.card-base;
   position: relative;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #dee2e6;
   padding: 15px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
   &.draggable {
     .cardHeader {
@@ -119,9 +78,9 @@
   }
 
   &.highlighted {
-    outline: 2px solid #007bff;
-    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.25);
-    background-color: #f8f9fa;
+    outline: 2px solid v.$primary;
+    box-shadow: 0 0 0 4px rgba(v.$primary, 0.25);
+    background-color: v.$gray-100;
   }
 
   .cardActions {
@@ -132,15 +91,15 @@
     gap: 5px;
 
     .iconButton {
-      @include button;
+      @include m.button-base;
       background: none;
       padding: 5px;
       line-height: 0;
       border: 1px solid transparent;
 
       &:hover {
-        background-color: #f1f3f5;
-        border-color: #adb5bd;
+        background-color: v.$gray-100;
+        border-color: v.$gray-500;
       }
 
       .icon {
@@ -151,7 +110,7 @@
     // 编辑模式下的操作按钮
     .saveButton,
     .cancelButton {
-      @include button;
+      @include m.button-base;
       padding: 5px;
       line-height: 0;
 
@@ -161,13 +120,13 @@
     }
 
     .saveButton {
-      background-color: #28a745;
-      color: white;
+      background-color: v.$success;
+      color: v.$white;
     }
 
     .cancelButton {
-      background-color: #6c757d;
-      color: white;
+      background-color: v.$secondary;
+      color: v.$white;
     }
   }
 
@@ -178,24 +137,14 @@
 
     .gadgetName {
       margin-right: 10px;
-      color: #343a40;
+      color: v.$gray-800;
     }
 
     .nameInput {
-      padding: 6px 8px;
+      @include m.input-base;
+      width: auto;
       margin-bottom: 5px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1em;
       font-weight: bold;
-      box-sizing: border-box;
-      font-family: 'consolas', monospace;
-
-      &:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-      }
     }
 
     .tagsContainer {
@@ -206,7 +155,7 @@
       align-items: center;
 
       .tag {
-        @include mixins.tag;
+        @include m.tag;
       }
     }
   }
@@ -214,17 +163,17 @@
   .gadgetAddress {
     display: flex;
     padding-bottom: 5px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid v.$border-color;
     margin-bottom: 10px;
     font-size: 0.85em;
-    color: #6c757d;
-    font-family: 'consolas', monospace;
+    color: v.$gray-600;
+    font-family: v.$font-family-monospace;
     font-style: italic;
   }
 
   .gadgetDesc {
-    font-size: 0.9em;
-    color: #666;
+    font-size: v.$font-size-sm;
+    color: v.$gray-600;
     white-space: pre-line;
   }
 
@@ -236,33 +185,16 @@
       display: block;
       margin-bottom: 3px;
       font-weight: bold;
-      color: #495057;
-      font-size: 0.9em;
+      color: v.$gray-700;
+      font-size: v.$font-size-sm;
     }
 
     .formInput {
-      width: 100%;
-      padding: 6px 8px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-size: 0.9em;
-      box-sizing: border-box;
-      font-family: 'consolas', monospace;
-
-      &:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-      }
+      @include m.input-base;
     }
 
     .formTextarea {
-      width: 100%;
-      padding: 6px 8px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-size: 0.9em;
-      box-sizing: border-box;
+      @include m.input-base;
       resize: vertical;
       font-family: inherit;
     }
@@ -277,7 +209,7 @@
       padding: 5px 0;
 
       .tag {
-        @include mixins.tag;
+        @include m.tag;
 
         display: flex;
         align-items: center;
@@ -308,54 +240,36 @@
       align-items: center;
       flex-wrap: wrap;
       padding: 10px;
-      background-color: #f8f9fa;
-      border-radius: 4px;
-      border: 1px dashed #ced4da;
+      background-color: v.$gray-100;
+      border-radius: v.$border-radius;
+      border: 1px dashed v.$gray-400;
 
       .tagInput {
+        @include m.input-base;
         flex: 1;
         min-width: 80px;
-        padding: 6px 10px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        font-size: 0.9em;
         &:focus {
-          outline: none;
-          border-color: #17a2b8;
-          box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.25);
+          border-color: v.$info;
+          box-shadow: 0 0 0 2px rgba(v.$info, 0.25);
         }
       }
 
       .tagSelect {
-        padding: 6px 10px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        font-size: 0.9em;
-        background-color: white;
+        @include m.input-base;
+        width: auto;
+        background-color: v.$white;
         &:focus {
-          outline: none;
-          border-color: #17a2b8;
-          box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.25);
+          border-color: v.$info;
+          box-shadow: 0 0 0 2px rgba(v.$info, 0.25);
         }
       }
 
       .addButton {
-        @include button;
-        background-color: #17a2b8;
-        color: white;
+        @include m.button-variant(v.$info);
         padding: 6px 12px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 0.9em;
-        border-radius: 4px;
 
         .icon {
           display: block;
-        }
-
-        &:hover {
-          background-color: #138496;
         }
       }
     }
@@ -363,9 +277,7 @@
 }
 
 .exportButton {
-  @include button;
-  background-color: #007bff;
-  color: white;
+  @include m.button-variant(v.$primary);
 
   .icon {
     display: block;
@@ -373,9 +285,7 @@
 }
 
 .addButton {
-  @include button;
-  background-color: #28a745;
-  color: white;
+  @include m.button-variant(v.$success);
 
   .icon {
     display: block;
@@ -383,9 +293,7 @@
 }
 
 .closeButton {
-  @include button;
-  background-color: #6c757d;
-  color: white;
+  @include m.button-variant(v.$gray-500);
 
   .icon {
     display: block;

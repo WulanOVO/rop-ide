@@ -1,30 +1,24 @@
+@use 'variables' as v;
+@use 'mixins' as m;
+
 .overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+  @include m.overlay;
 }
 
 .panel {
-  background: #f0f0f0;
-  padding: 20px;
-  border-radius: 8px;
   width: 420px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  border: 1px solid #f4f4f4;
-  color: #333;
+  padding: 20px;
+  border: 1px solid v.$bg-light;
+  border-radius: v.$border-radius-lg;
+  background: v.$gray-100; // #f0f0f0
+  color: v.$gray-800; // #333
+  box-shadow: v.$box-shadow-lg;
 
   h2 {
     margin-top: 0;
     margin-bottom: 12px;
+    color: v.$gray-800; // #333
     font-size: 1.5em;
-    color: #333;
     text-align: center;
   }
 }
@@ -35,42 +29,32 @@
   label {
     display: block;
     margin-bottom: 8px;
-    font-weight: bold;
     color: #555;
+    font-weight: bold;
   }
 
   input[type='text'] {
-    width: 100%;
-    padding: 0.375rem 0.625rem;
-    font-size: 0.875rem;
-    border-radius: 0.25rem;
-    border: 1px solid #ccc;
-    background-color: #fff;
+    @include m.input-base;
+    background-color: v.$white;
     cursor: pointer;
 
     &:hover {
       border-color: #999;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
     }
   }
 
   select {
     width: 100%;
     padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background-color: #fff;
-    color: #333;
+    border: 1px solid v.$gray-400; // #ccc
+    border-radius: v.$border-radius;
+    background-color: v.$white;
+    color: v.$gray-800; // #333
 
     option {
       padding: 5px;
       background-color: #f9f9f9;
-      color: #333;
+      color: v.$gray-800; // #333
     }
   }
 
@@ -80,8 +64,7 @@
 }
 
 .radioGroup {
-  display: flex;
-  flex-direction: column;
+  @include m.flex-column;
 
   label {
     display: flex;
@@ -102,17 +85,12 @@
   margin-top: 25px;
 
   button {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1em;
+    @include m.button-base;
     margin-left: 10px;
-    transition: background-color 0.2s ease;
 
     &:first-child {
       background-color: #ddd;
-      color: #333;
+      color: v.$gray-800; // #333
 
       &:hover {
         background-color: #ccc;
@@ -120,11 +98,11 @@
     }
 
     &:last-child {
-      background-color: #007bff;
-      color: #fff;
+      background-color: v.$primary;
+      color: v.$white;
 
       &:hover {
-        background-color: #0056b3;
+        background-color: v.$primary-hover;
       }
     }
   }

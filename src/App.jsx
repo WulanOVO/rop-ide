@@ -4,6 +4,7 @@ import InputPanel from './InputPanel';
 import HexPanel from './HexPanel';
 import NewFilePanel from './NewFilePanel';
 import GadgetManager from './GadgetManager';
+import MarketPanel from './MarketPanel';
 import { parseRopInput } from './parser';
 
 const IDE_VERSION = 100;
@@ -43,6 +44,7 @@ export default function App() {
   const [gadgets, setGadgets] = useState([]);
   const [showNewFilePanel, setShowNewFilePanel] = useState(false);
   const [showGadgetManager, setShowGadgetManager] = useState(false);
+  const [showMarketPanel, setShowMarketPanel] = useState(false);
   const [highlightedGadget, setHighlightedGadget] = useState(null);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [parsedInput, setParsedInput] = useState({
@@ -53,6 +55,64 @@ export default function App() {
   });
 
   const [messages, setMessages] = useState([]);
+  const [newFileCount, setNewFileCount] = useState(0);
+  const [marketIds, setMarketIds] = useState([]);
+
+  // Check for market updates on mount
+  useEffect(() => {
+    const checkNewFiles = async () => {
+      try {
+        const res = await fetch('/api/market?idOnly=true');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+
+        const currentIds = data.map((item) => item.id);
+        setMarketIds(currentIds);
+
+        const seenIds = JSON.parse(
+          localStorage.getItem('rop-ide-market-ids') || '[]',
+        );
+        const newCount = currentIds.filter(
+          (id) => !seenIds.includes(id),
+        ).length;
+        setNewFileCount(newCount);
+      } catch (e) {
+        console.error('Failed to check market updates', e);
+      }
+    };
+
+    checkNewFiles();
+  }, []);
+
+  const handleOpenMarket = () => {
+    setShowMarketPanel(true);
+
+    if (marketIds.length > 0) {
+      localStorage.setItem('rop-ide-market-ids', JSON.stringify(marketIds));
+      setNewFileCount(0);
+    }
+  };
+
+  const addMessage = useCallback((message, type = 'info') => {
+    const newMessage = {
+      id: Date.now() + Math.random(), // 确保唯一性
+      message,
+      type,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    // 3秒后自动移除消息
+    setTimeout(() => {
+      setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+    }, 3000);
+  }, []);
+
+  const removeMessage = useCallback((id) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  }, []);
 
   const createNewFile = () => {
     setShowNewFilePanel(true);
@@ -134,14 +194,19 @@ export default function App() {
     setIsDirty(true);
   };
 
-  const saveFile = async () => {
-    const fileData = {
+  const getCurrentFileData = useCallback(
+    () => ({
       input,
       leftStartAddress,
       rightStartAddress,
       gadgets,
       ideVersion: IDE_VERSION,
-    };
+    }),
+    [input, leftStartAddress, rightStartAddress, gadgets],
+  );
+
+  const saveFile = async () => {
+    const fileData = getCurrentFileData();
 
     const jsonString = JSON.stringify(fileData, null);
     const blob = new Blob([jsonString], { type: 'application/json' });
@@ -226,7 +291,7 @@ export default function App() {
       setSelectedByte(newSelectedByte);
       setSelectedInput(newSelectedInput);
     },
-    []
+    [],
   );
 
   const handleHexDisplayChange = useCallback(
@@ -234,7 +299,7 @@ export default function App() {
       setHexDisplay(newHexDisplay);
       setByteToInputMap(newByteToInputMap);
     },
-    []
+    [],
   );
 
   const handleLeftAddrChange = useCallback((newAddr) => {
@@ -252,32 +317,47 @@ export default function App() {
     setIsDirty(true);
   }, []);
 
-  const addMessage = useCallback((message, type = 'info') => {
-    const newMessage = {
-      id: Date.now() + Math.random(), // 确保唯一性
-      message,
-      type,
-      timestamp: new Date(),
-    };
+  const handleLoadMarketFile = useCallback(
+    (fileData, name) => {
+      if (isDirty && !confirm('是否放弃当前更改并打开新文件？')) {
+        return;
+      }
 
-    setMessages((prev) => [...prev, newMessage]);
+      let normalizedData = fileData;
+      if (normalizedData.ideVersion < IDE_VERSION) {
+        const { newFileData, messages } = upgradeOldFile(normalizedData);
+        normalizedData = newFileData;
+        messages.forEach((message) => addMessage(...message));
+      } else if (normalizedData.ideVersion !== IDE_VERSION) {
+        addMessage('文件版本错误', 'error');
+        return;
+      }
 
-    // 3秒后自动移除消息
-    setTimeout(() => {
-      setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
-    }, 3000);
-  }, []);
+      const fileName = name?.endsWith('.rop') ? name : `${name}.rop`;
 
-  const removeMessage = useCallback((id) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
-  }, []);
+      setInput(normalizedData.input || '');
+      setSelectedInput(null);
+      setSelectedByte(null);
+      setCurrentFileName(fileName || '未命名.rop');
+      setLeftStartAddress(normalizedData.leftStartAddress || '0000');
+      setRightStartAddress(normalizedData.rightStartAddress || '0000');
+      setGadgets(normalizedData.gadgets || []);
+      setIsDirty(true);
+      setIsFileOpen(true);
+      setFileHandle(null);
+      setShowAutocomplete(false);
+      setShowMarketPanel(false);
+      addMessage(`文件 "${fileName || '未命名.rop'}" 打开成功`, 'info');
+    },
+    [isDirty, addMessage, setShowMarketPanel],
+  );
 
   // 根据当前文件名更新标题
   useEffect(() => {
-    if (currentFileName) {
+    if (isFileOpen) {
       document.title = `RopIDE - ${currentFileName}`;
     }
-  }, [currentFileName]);
+  }, [currentFileName, isFileOpen]);
 
   // 全局监听快捷键
   useEffect(() => {
@@ -373,9 +453,22 @@ export default function App() {
           onConfirm={handleNewFileConfirm}
         />
 
+        {showMarketPanel && (
+          <MarketPanel
+            show={showMarketPanel}
+            onClose={() => setShowMarketPanel(false)}
+            currentFileData={getCurrentFileData()}
+            currentFileName={currentFileName}
+            onLoadFile={handleLoadMarketFile}
+            addMessage={addMessage}
+          />
+        )}
+
         <div className={style.welcomeContainer}>
           <h1>欢迎使用 RopIDE</h1>
-          <p className={style.welcomeInfo}>开始一个新的项目或打开一个现有的项目</p>
+          <p className={style.welcomeInfo}>
+            开始一个新的项目或打开一个现有的项目
+          </p>
           <div className={style.buttonContainer}>
             <button className={style.welcomeButton} onClick={createNewFile}>
               创建新文件
@@ -383,6 +476,21 @@ export default function App() {
             <button className={style.welcomeButton} onClick={openFile}>
               打开文件
             </button>
+            <div className={style.marketEntryContainer}>
+              <button
+                className={`${style.welcomeButton} ${
+                  newFileCount > 0 ? style.marketButton : ''
+                }`}
+                onClick={handleOpenMarket}
+              >
+                程序广场
+                {newFileCount > 0 && (
+                  <span
+                    className={style.newBadge}
+                  >{`${newFileCount}个新程序`}</span>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className={style.footer}>
@@ -407,6 +515,10 @@ export default function App() {
               </a>
               &nbsp; @wlyibo
             </p>
+          </div>
+
+          <div className={style.versionInfo}>
+            <p>v2.0.0</p>
           </div>
         </div>
 
@@ -434,6 +546,18 @@ export default function App() {
           }}
           highlightedGadget={highlightedGadget}
           setHighlightedGadget={setHighlightedGadget}
+        />
+      )}
+
+      {showMarketPanel && (
+        <MarketPanel
+          show={showMarketPanel}
+          withPublishBtn={isFileOpen}
+          onClose={() => setShowMarketPanel(false)}
+          currentFileData={getCurrentFileData()}
+          currentFileName={currentFileName}
+          onLoadFile={handleLoadMarketFile}
+          addMessage={addMessage}
         />
       )}
 
@@ -475,6 +599,16 @@ export default function App() {
           value={currentFileName}
           onChange={handleFileNameChange}
         />
+        <button
+          className={`${style.toolbarButton} ${style.marketButton} ${style.toolbarMarketButton}`}
+          onClick={() => {
+            setShowMarketPanel(true);
+            setShowAutocomplete(false);
+          }}
+          title="在线查看和发布程序"
+        >
+          程序广场
+        </button>
       </div>
 
       <div className={style.pageContainer}>

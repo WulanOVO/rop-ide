@@ -1,0 +1,13 @@
+{
+  "name": "ropide",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2026-03-01",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rop-market",
+      "database_id": "6a2c1e5f-f7f8-438d-a48c-546a9c6ad4b4"
+    }
+  ]
+}

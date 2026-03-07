@@ -1,0 +1,57 @@
+// Colors
+// Grays
+$gray-100: #f8f9fa;
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #6c757d;
+$gray-700: #495057;
+$gray-800: #343a40;
+$gray-900: #212529;
+
+$white: #fff;
+$black: #000;
+
+// Brand Colors
+$primary: #007bff;
+$primary-hover: #0056b3;
+$primary-light: #e7f5ff;
+$secondary: #6c757d;
+
+// State Colors
+$success: #28a745;
+$success-hover: #218838;
+$info: #17a2b8;
+$warning: #ffc107;
+$danger: #dc3545;
+$danger-hover: #c82333;
+
+// Specific Colors (from existing code)
+$bg-light: #f4f4f4;
+$bg-lighter: #f6f6f6;
+$border-color: #ccc;
+
+// Typography
+$font-family-base: Arial, sans-serif;
+$font-family-monospace: 'consolas', monospace;
+$font-size-base: 16px;
+$font-size-sm: 0.9em;
+$font-size-xs: 0.85em;
+
+// Layout
+$border-radius: 4px;
+$border-radius-lg: 8px;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+
+// Shadows
+$box-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+$box-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$box-shadow-lg: 0 5px 15px rgba(0, 0, 0, 0.3);
+
+// Z-Index
+$z-index-dropdown: 1000;
+$z-index-overlay: 1000;
+$z-index-modal: 1100;

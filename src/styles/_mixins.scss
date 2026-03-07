@@ -1,3 +1,113 @@
+@use 'variables' as v;
+
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin absolute-cover {
+  position: fixed; // or absolute, but usually fixed for overlays
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+@mixin overlay {
+  @include absolute-cover;
+  background-color: rgba(0, 0, 0, 0.5);
+  @include flex-center;
+  z-index: v.$z-index-overlay;
+  padding: 20px;
+  overflow: auto;
+}
+
+@mixin button-base {
+  padding: 8px 15px;
+  border: none;
+  border-radius: v.$border-radius;
+  cursor: pointer;
+  font-size: v.$font-size-sm;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-variant($bg-color, $text-color: v.$white) {
+  @include button-base;
+  background-color: $bg-color;
+  color: $text-color;
+
+  &:hover {
+    background-color: darken($bg-color, 5%);
+  }
+}
+
+@mixin input-base {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid v.$gray-400;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  box-sizing: border-box;
+  font-family: v.$font-family-monospace;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary;
+    box-shadow: 0 0 0 2px rgba(v.$primary, 0.25);
+  }
+}
+
+@mixin card-base {
+  background: v.$white;
+  border-radius: v.$border-radius-lg; // Often 8px for panels/cards
+  border: 1px solid v.$gray-300;
+  box-shadow: v.$box-shadow-sm;
+}
+
+@mixin scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: v.$gray-100;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: v.$gray-400;
+    border-radius: 4px;
+
+    &:hover {
+      background: v.$gray-500;
+    }
+  }
+}
+
 @mixin tag {
   padding: 1px 3px;
   border-radius: 5px;
@@ -5,9 +115,9 @@
   font-weight: bold;
 
   &.gray {
-    color: #343a40;
-    background-color: #f1f3f5;
-    border: 2px solid #adb5bd;
+    color: v.$gray-800;
+    background-color: v.$gray-100;
+    border: 2px solid v.$gray-500;
   }
 
   &.blue {

@@ -1,0 +1,224 @@
+@use 'variables' as v;
+@use 'mixins' as m;
+
+.overlay {
+  @include m.overlay;
+}
+
+.marketPanel {
+  overflow: hidden;
+  width: 92%;
+  max-width: 1300px;
+  height: 90vh;
+  border-radius: v.$border-radius-lg;
+  background: v.$gray-100;
+  @include m.flex-column;
+  box-shadow: v.$box-shadow-lg;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid v.$gray-300;
+  background: v.$gray-200;
+
+  h2 {
+    margin: 0;
+    color: v.$gray-800;
+  }
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+}
+
+.searchContainer {
+  width: 240px;
+}
+
+.searchInput {
+  @include m.input-base;
+  width: 100%;
+}
+
+.downloadBtn,
+.primaryButton {
+  @include m.button-variant(v.$success);
+}
+
+.secondaryButton {
+  @include m.button-variant(v.$secondary);
+}
+
+.closeButton {
+  @include m.button-variant(v.$gray-500);
+}
+
+.formGroup {
+  @include m.flex-column;
+
+  label {
+    margin-bottom: 6px;
+    color: v.$gray-700;
+    font-size: v.$font-size-xs;
+    font-weight: bold;
+  }
+}
+
+.formGroupWide {
+  @include m.flex-column;
+  grid-column: span 2;
+
+  label {
+    margin-bottom: 6px;
+    color: v.$gray-700;
+    font-size: v.$font-size-xs;
+    font-weight: bold;
+  }
+}
+
+.required {
+  margin-left: 2px;
+  color: v.$danger;
+}
+
+.formInput {
+  @include m.input-base;
+}
+
+.formSelect {
+  @include m.input-base;
+}
+
+.formTextarea {
+  @include m.input-base;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.publishOverlay {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.35);
+  inset: 0;
+  @include m.flex-center;
+  z-index: v.$z-index-modal;
+  padding: 20px;
+}
+
+.publishModal {
+  width: min(560px, 92vw);
+  border: 1px solid v.$gray-300;
+  border-radius: v.$border-radius-lg;
+  background: v.$gray-100;
+  box-shadow: v.$box-shadow-lg;
+  @include m.flex-column;
+  gap: 12px;
+}
+
+.publishHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px 0;
+
+  h3 {
+    margin: 0;
+    color: v.$gray-800;
+  }
+}
+
+.publishBody {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0 18px;
+  gap: 12px;
+}
+
+.publishActions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 18px 16px;
+  gap: 10px;
+}
+
+.marketList {
+  display: grid;
+  overflow-y: auto;
+  flex: 1;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-auto-rows: min-content;
+  padding: 20px;
+  gap: 16px;
+}
+
+.marketCard {
+  @include m.card-base;
+  padding: 14px;
+  @include m.flex-column;
+
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid v.$gray-300;
+
+    .cardInfo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      .cardTitle {
+        color: v.$gray-800;
+        font-size: 1.1em;
+        font-weight: bold;
+        word-break: break-all;
+      }
+
+      .cardMeta {
+        display: flex;
+        align-items: center;
+        color: v.$gray-600;
+        font-size: v.$font-size-xs;
+        gap: 8px;
+      }
+    }
+
+    .downloadBtn {
+      display: flex;
+      height: fit-content;
+      gap: 8px;
+    }
+  }
+
+  .cardDesc {
+    margin-left: 4px;
+    color: v.$gray-700;
+    font-size: v.$font-size-sm;
+    white-space: pre-line;
+  }
+
+  .cardTime {
+    color: v.$gray-600;
+    font-size: 0.8em;
+    text-align: right;
+  }
+}
+
+.emptyState {
+  grid-column: 1 / -1;
+  padding: 40px 0;
+  color: v.$gray-600;
+  text-align: center;
+}

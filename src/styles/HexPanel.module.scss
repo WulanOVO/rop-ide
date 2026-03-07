@@ -1,12 +1,14 @@
+@use 'variables' as v;
+@use 'mixins' as m;
+
 .hexPanel {
-  display: flex;
-  flex-direction: column;
+  @include m.flex-column;
   padding: 0.75rem;
   width: fit-content;
   height: auto;
-  background-color: #f4f4f4;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  background-color: v.$bg-light;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius;
 
   .hexDisplaySetting {
     display: flex;
@@ -22,38 +24,22 @@
     align-items: center;
 
     .addressInput {
-      padding: 0.375rem 0.625rem;
-      font-size: 0.875rem;
-      border-radius: 0.25rem;
-      border: 1px solid #ccc;
-      background-color: #fff;
-      cursor: pointer;
+      @include m.input-base;
       width: 6rem;
       min-width: 4rem;
+      background-color: v.$white;
+      cursor: pointer;
 
       &:hover {
-        border-color: #999;
-      }
-
-      &:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        border-color: v.$gray-500;
       }
     }
   }
 
   .copyButton {
-    padding: 0.25rem 0.75rem;
-    background-color: #1c7ed6;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
+    @include m.button-variant(#1c7ed6);
     height: 2rem;
     margin-left: auto;
-    transition: background-color 0.2s ease;
 
     &:hover {
       background-color: #1864ab;
@@ -72,11 +58,11 @@
     width: fit-content;
     margin: 0 auto;
     height: 100%;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    background-color: v.$white;
+    border: 1px solid v.$border-color;
+    border-radius: v.$border-radius;
     padding: 0.75rem;
-    font-family: 'consolas', monospace;
+    font-family: v.$font-family-monospace;
     font-size: 0.9rem;
     overflow-y: auto;
     white-space: nowrap;
@@ -88,17 +74,18 @@
     align-items: center;
 
     .leftAddress {
+      color: v.$gray-800; // was #888, slightly darker for contrast or keep #888
       color: #888;
       width: 3rem;
       text-align: left;
-      border-right: 1px solid #ccc;
+      border-right: 1px solid v.$border-color;
     }
 
     .rightAddress {
-      color: #0066cc;
+      color: v.$primary-hover; // #0066cc
       width: 3rem;
       text-align: right;
-      border-left: 1px solid #ccc;
+      border-left: 1px solid v.$border-color;
     }
 
     .hexBytes {
@@ -119,7 +106,7 @@
         }
 
         &:hover {
-          outline: 2px solid #ccc;
+          outline: 2px solid v.$border-color;
         }
 
         &.selected {
@@ -134,31 +121,31 @@
     display: flex;
     margin-top: 0.5rem;
     padding: 0.5rem 0.5rem 0;
-    border-top: 1px solid #ccc;
+    border-top: 1px solid v.$border-color;
 
     .selectedAddresses {
       display: flex;
       gap: 0.5rem;
-      color: #333;
+      color: v.$gray-800; // #333
 
       .leftSelectedAddress {
-        font-family: 'consolas', monospace;
+        font-family: v.$font-family-monospace;
         padding-right: 0.5rem;
         margin: auto 0;
-        border-right: 2px solid #ccc;
+        border-right: 2px solid v.$border-color;
         color: #888;
       }
 
       .rightSelectedAddress {
-        font-family: 'consolas', monospace;
+        font-family: v.$font-family-monospace;
         margin: auto 0;
-        color: #0066cc;
+        color: v.$primary-hover; // #0066cc
       }
     }
 
     .bytesTotal {
       margin-left: auto;
-      color: #333;
+      color: v.$gray-800; // #333
     }
   }
 }
