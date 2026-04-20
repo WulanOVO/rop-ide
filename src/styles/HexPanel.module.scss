@@ -3,25 +3,28 @@
 
 .hexPanel {
   @include m.flex-column;
+  width: max-content;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
   padding: 0.75rem;
-  width: fit-content;
-  height: auto;
-  background-color: v.$bg-light;
   border: 1px solid v.$border-color;
   border-radius: v.$border-radius;
+  background-color: v.$bg-light;
 
   .hexDisplaySetting {
     display: flex;
-    gap: 0.5rem;
-    margin: 0 0.5rem 0.5rem;
     align-items: center;
+    flex-wrap: wrap;
+    margin: 0 0.5rem 0.5rem;
+    gap: 0.5rem;
   }
 
   .addressInputContainer {
     display: flex;
-    gap: 0.5rem;
-    margin-right: 0.5rem;
     align-items: center;
+    margin-right: 0.5rem;
+    gap: 0.5rem;
 
     .addressInput {
       @include m.input-base;
@@ -55,51 +58,58 @@
   }
 
   .hexDisplay {
-    width: fit-content;
-    margin: 0 auto;
+    overflow-x: auto;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 100%;
     height: 100%;
-    background-color: v.$white;
+    min-height: 0;
+    margin: 0;
+    padding: 0.75rem;
     border: 1px solid v.$border-color;
     border-radius: v.$border-radius;
-    padding: 0.75rem;
+    background-color: v.$white;
     font-family: v.$font-family-monospace;
     font-size: 0.9rem;
-    overflow-y: auto;
     white-space: nowrap;
   }
 
   .hexRow {
     display: flex;
-    margin-bottom: 0.5rem;
-    align-items: center;
+    width: max-content;
+    margin: 0 auto 0.5rem auto;
+    justify-content: flex-start;
 
     .leftAddress {
-      color: v.$gray-800; // was #888, slightly darker for contrast or keep #888
-      color: #888;
-      width: 3rem;
-      text-align: left;
+      flex: 0 0 auto;
+      padding-right: 0.5rem;
       border-right: 1px solid v.$border-color;
+      color: v.$gray-800;
+      color: #888;
+      text-align: left;
     }
 
     .rightAddress {
-      color: v.$primary-hover; // #0066cc
-      width: 3rem;
-      text-align: right;
+      flex: 0 0 auto;
+      padding-left: 0.5rem;
       border-left: 1px solid v.$border-color;
+      color: v.$primary-hover;
+      text-align: right;
     }
 
     .hexBytes {
       display: flex;
-      gap: 0.25rem;
-      padding: 0 0.5rem;
+      flex: 0 0 auto;
       flex-wrap: nowrap;
+      padding: 0 0.5rem;
+      gap: 0.2rem;
 
       .hexByte {
-        width: 1.5rem;
-        text-align: center;
         display: inline-block;
-        cursor: pointer;
+        width: 1.5rem;
         border-radius: 2px;
+        text-align: center;
+        cursor: pointer;
 
         &.zero {
           color: #888;
@@ -110,8 +120,8 @@
         }
 
         &.selected {
-          background-color: #fff100;
           outline: 2px solid #ffb900;
+          background-color: #fff100;
         }
       }
     }
@@ -119,33 +129,86 @@
 
   .hexFootbar {
     display: flex;
+    flex-wrap: wrap;
     margin-top: 0.5rem;
     padding: 0.5rem 0.5rem 0;
     border-top: 1px solid v.$border-color;
+    gap: 0.5rem;
 
     .selectedAddresses {
       display: flex;
+      color: v.$gray-800;
       gap: 0.5rem;
-      color: v.$gray-800; // #333
 
       .leftSelectedAddress {
-        font-family: v.$font-family-monospace;
-        padding-right: 0.5rem;
         margin: auto 0;
+        padding-right: 0.5rem;
         border-right: 2px solid v.$border-color;
         color: #888;
+        font-family: v.$font-family-monospace;
       }
 
       .rightSelectedAddress {
-        font-family: v.$font-family-monospace;
         margin: auto 0;
-        color: v.$primary-hover; // #0066cc
+        color: v.$primary-hover;
+        font-family: v.$font-family-monospace;
       }
     }
 
     .bytesTotal {
       margin-left: auto;
-      color: v.$gray-800; // #333
+      color: v.$gray-800;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .hexPanel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .hexPanel {
+    padding: 0.625rem;
+
+    .hexDisplaySetting {
+      margin: 0 0 0.5rem;
+      align-items: flex-start;
+
+      .addressInputContainer {
+        flex: 1 1 100%;
+        justify-content: space-between;
+        margin-right: 0;
+
+        .addressInput {
+          width: min(8rem, 45vw);
+        }
+      }
+
+      .copyButton {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+
+    .hexDisplay {
+      margin: 0;
+      padding: 0.625rem;
+      font-size: 0.82rem;
+
+      .hexBytes {
+        gap: 0;
+      }
+    }
+
+    .hexFootbar {
+      padding: 0.5rem 0 0;
+
+      .selectedAddresses,
+      .bytesTotal {
+        font-size: 0.9rem;
+      }
     }
   }
 }

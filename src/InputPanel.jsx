@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo, forwardRef } from 'react';
 import style from './styles/InputPanel.module.scss';
 
 export default function InputPanel({
@@ -333,30 +333,55 @@ export default function InputPanel({
   );
 }
 
-function HighlightContent({ ref, parsedInput }) {
-  const { highlightLines } = parsedInput;
-
-  return (
-    <div className={style.highlightContent} ref={ref}>
-      {highlightLines.map((spans, index) => (
-        <div key={index}>
-          {spans.length === 0 && <br />}
-          {spans.map((span, spanIndex) => (
-            <span
-              key={spanIndex}
-              className={span.type
+const HighlightLine = memo(
+  ({ spans }) => {
+    return (
+      <div>
+        {spans.length === 0 && <br />}
+        {spans.map((span, spanIndex) => {
+          const className = span.type
+            ? span.type
                 .split(',')
                 .map((t) => style[t])
-                .join(' ')}
-            >
+                .join(' ')
+            : '';
+          return (
+            <span key={spanIndex} className={className}>
               {span.content}
             </span>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
+          );
+        })}
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    if (prevProps.spans === nextProps.spans) return true;
+    if (prevProps.spans.length !== nextProps.spans.length) return false;
+    for (let i = 0; i < prevProps.spans.length; i++) {
+      if (
+        prevProps.spans[i].type !== nextProps.spans[i].type ||
+        prevProps.spans[i].content !== nextProps.spans[i].content
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+);
+
+const HighlightContent = memo(
+  forwardRef(({ parsedInput }, ref) => {
+    const { highlightLines } = parsedInput;
+
+    return (
+      <div className={style.highlightContent} ref={ref}>
+        {highlightLines.map((spans, index) => (
+          <HighlightLine key={index} spans={spans} />
+        ))}
+      </div>
+    );
+  })
+);
 
 function AutocompletePanel({
   suggestions,

@@ -120,7 +120,7 @@ export default function HexPanel({
         end: end + 1,
       };
     },
-    [byteToInputMap]
+    [byteToInputMap],
   );
 
   const handleByteClick = useCallback(
@@ -140,7 +140,7 @@ export default function HexPanel({
       });
       onSelectedByteChange({ rowIndex, byteIndex }, { start, end });
     },
-    [selectedByte, onSelectedByteChange, byteToInputMap, findInputRange]
+    [selectedByte, onSelectedByteChange, byteToInputMap, findInputRange],
   );
 
   // 计算选中字节的地址

@@ -29,6 +29,8 @@ const upgradeOldFile = (fileData) => {
 };
 
 export default function App() {
+  const toolbarRef = useRef(null);
+
   const [isFileOpen, setIsFileOpen] = useState(false);
   const [fileHandle, setFileHandle] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -57,8 +59,11 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [newFileCount, setNewFileCount] = useState(0);
   const [marketIds, setMarketIds] = useState([]);
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false);
+  const [activeMobilePanel, setActiveMobilePanel] = useState('input');
+  const [editorViewportHeight, setEditorViewportHeight] = useState(null);
 
-  // Check for market updates on mount
+  // 获取市场文件ID列表
   useEffect(() => {
     const checkNewFiles = async () => {
       try {
@@ -84,6 +89,34 @@ export default function App() {
 
     checkNewFiles();
   }, []);
+
+  useEffect(() => {
+    const updateLayout = () => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const nextIsNarrowScreen = viewportWidth <= 900;
+
+      setIsNarrowScreen(nextIsNarrowScreen);
+      if (!nextIsNarrowScreen) {
+        setActiveMobilePanel('input');
+      }
+
+      if (toolbarRef.current) {
+        const toolbarBottom = toolbarRef.current.getBoundingClientRect().bottom;
+        const nextHeight = Math.max(Math.floor(viewportHeight - toolbarBottom - 16), 280);
+        setEditorViewportHeight(nextHeight);
+      }
+    };
+
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    window.visualViewport?.addEventListener('resize', updateLayout);
+
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      window.visualViewport?.removeEventListener('resize', updateLayout);
+    };
+  }, [isFileOpen]);
 
   const handleOpenMarket = () => {
     setShowMarketPanel(true);
@@ -518,7 +551,7 @@ export default function App() {
           </div>
 
           <div className={style.versionInfo}>
-            <p>v2.0.0</p>
+            <p>v2.0.1</p>
           </div>
         </div>
 
@@ -561,7 +594,7 @@ export default function App() {
         />
       )}
 
-      <div className={style.toolbar}>
+      <div className={style.toolbar} ref={toolbarRef}>
         <button
           className={style.toolbarButton}
           onClick={createNewFile}
@@ -611,36 +644,78 @@ export default function App() {
         </button>
       </div>
 
-      <div className={style.pageContainer}>
-        <div className={style.editorContainer}>
-          <InputPanel
-            input={input}
-            onInputChange={handleInputChange}
-            onSelectionInputChange={handleSelectionInputChange}
-            byteToInputMap={byteToInputMap}
-            selectedInput={selectedInput}
-            onClearSelection={handleClearSelection}
-            showAutocomplete={showAutocomplete}
-            setShowAutocomplete={setShowAutocomplete}
-            gadgets={gadgets}
-            onCheckGadget={handleCheckGadget}
-            parsedInput={parsedInput}
-          />
+      <div
+        className={`${style.pageContainer} ${
+          isNarrowScreen ? style.compactPageContainer : ''
+        }`}
+        style={
+          editorViewportHeight
+            ? { height: `${editorViewportHeight}px` }
+            : undefined
+        }
+      >
+        {isNarrowScreen && (
+          <div className={style.mobilePanelTabs}>
+            <button
+              className={`${style.mobilePanelTab} ${
+                activeMobilePanel === 'input' ? style.activeMobilePanelTab : ''
+              }`}
+              onClick={() => setActiveMobilePanel('input')}
+            >
+              代码编辑
+            </button>
+            <button
+              className={`${style.mobilePanelTab} ${
+                activeMobilePanel === 'hex' ? style.activeMobilePanelTab : ''
+              }`}
+              onClick={() => setActiveMobilePanel('hex')}
+            >
+              十六进制
+            </button>
+          </div>
+        )}
 
-          <HexPanel
-            input={input}
-            hexDisplay={hexDisplay}
-            selectedByte={selectedByte}
-            byteToInputMap={byteToInputMap}
-            leftStartAddress={leftStartAddress}
-            rightStartAddress={rightStartAddress}
-            onLeftAddrChange={handleLeftAddrChange}
-            onRightAddrChange={handleRightAddrChange}
-            onSelectedByteChange={handleSelectionByteChange}
-            onHexDisplayChange={handleHexDisplayChange}
-            gadgets={gadgets}
-            parsedInput={parsedInput}
-          />
+        <div
+          className={`${style.editorContainer} ${
+            isNarrowScreen ? style.mobileEditorContainer : ''
+          }`}
+        >
+          {(!isNarrowScreen || activeMobilePanel === 'input') && (
+            <div className={`${style.panelHost} ${style.inputPanelHost}`}>
+              <InputPanel
+                input={input}
+                onInputChange={handleInputChange}
+                onSelectionInputChange={handleSelectionInputChange}
+                byteToInputMap={byteToInputMap}
+                selectedInput={selectedInput}
+                onClearSelection={handleClearSelection}
+                showAutocomplete={showAutocomplete}
+                setShowAutocomplete={setShowAutocomplete}
+                gadgets={gadgets}
+                onCheckGadget={handleCheckGadget}
+                parsedInput={parsedInput}
+              />
+            </div>
+          )}
+
+          {(!isNarrowScreen || activeMobilePanel === 'hex') && (
+            <div className={`${style.panelHost} ${style.hexPanelHost}`}>
+              <HexPanel
+                input={input}
+                hexDisplay={hexDisplay}
+                selectedByte={selectedByte}
+                byteToInputMap={byteToInputMap}
+                leftStartAddress={leftStartAddress}
+                rightStartAddress={rightStartAddress}
+                onLeftAddrChange={handleLeftAddrChange}
+                onRightAddrChange={handleRightAddrChange}
+                onSelectedByteChange={handleSelectionByteChange}
+                onHexDisplayChange={handleHexDisplayChange}
+                gadgets={gadgets}
+                parsedInput={parsedInput}
+              />
+            </div>
+          )}
         </div>
       </div>
 

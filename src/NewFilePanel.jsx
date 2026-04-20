@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import style from './styles/NewFilePanel.module.scss';
 
-const SERVER_GADGETS = ['fx-991CNX_VerC.json'];
+const SERVER_GADGETS = ['fx-991CNX_VerC.json', 'fx-991CNX_VerF.json'];
 
 export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
   const [fileName, setFileName] = useState('');

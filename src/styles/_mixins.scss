@@ -29,6 +29,7 @@
 }
 
 @mixin button-base {
+  min-width: max-content;
   padding: 8px 15px;
   border: none;
   border-radius: v.$border-radius;

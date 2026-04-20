@@ -1,7 +1,7 @@
 {
   "name": "rop-ide",
   "private": true,
-  "version": "0.1.1",
+  "version": "2.0.1",
   "type": "module",
   "scripts": {
     "dev:vite": "vite",
@@ -9,7 +9,7 @@
     "build": "vite build && cp -r functions/ dist/",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "gh-pages -d dist -b pages"
+    "deploy": "wrangler pages deploy dist"
   },
   "dependencies": {
     "react": "^19.1.0",
