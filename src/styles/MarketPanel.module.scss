@@ -7,7 +7,7 @@
 
 .marketPanel {
   overflow: hidden;
-  width: 92%;
+  width: 100%;
   max-width: 1300px;
   height: 90vh;
   border-radius: v.$border-radius-lg;
@@ -19,6 +19,7 @@
 .header {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid v.$gray-300;
@@ -34,6 +35,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 
   button {
     display: flex;

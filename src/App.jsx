@@ -551,7 +551,7 @@ export default function App() {
           </div>
 
           <div className={style.versionInfo}>
-            <p>v2.0.1</p>
+            <p>v2.0.2</p>
           </div>
         </div>
 

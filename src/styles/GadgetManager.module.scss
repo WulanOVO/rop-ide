@@ -8,7 +8,7 @@
 .managerPanel {
   background: v.$gray-100;
   border-radius: v.$border-radius-lg;
-  width: 90%;
+  width: 100%;
   max-width: 1200px;
   height: 90vh;
   overflow: hidden;
@@ -22,6 +22,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
 
     h2 {
       margin: 0;
@@ -32,6 +33,7 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-wrap: wrap;
 
       button {
         display: flex;
