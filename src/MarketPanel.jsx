@@ -9,6 +9,44 @@ const normalizeName = (name) => {
   return name.replace(/\.rop$/i, '');
 };
 
+const MarketCard = ({ item, isFeatured, onDownload, downloadingId }) => {
+  return (
+    <div className={`${style.marketCard} ${isFeatured ? style.featured : ''}`}>
+      <div className={style.cardHeader}>
+        <div className={style.cardInfo}>
+          <div className={style.cardTitle}>
+            {item.name}
+            {isFeatured && <span className={style.featuredStar}>★</span>}
+          </div>
+          <div className={style.cardMeta}>
+            <span className={style.cardAuthor}>作者: {item.author}</span>
+            <span className={style.cardModel}>机型: {item.model}</span>
+          </div>
+        </div>
+        <button
+          onClick={() => onDownload(item)}
+          className={style.downloadBtn}
+          disabled={downloadingId === item.id}
+        >
+          下载
+        </button>
+      </div>
+      {item.description && <div className={style.cardDesc}>{item.description}</div>}
+      <span className={style.cardTime}>
+        {item.timestamp
+          ? new Date(item.timestamp).toLocaleString(undefined, {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '-'}
+      </span>
+    </div>
+  );
+};
+
 export default function MarketPanel({
   show,
   withPublishBtn,
@@ -78,6 +116,14 @@ export default function MarketPanel({
           .includes(term),
     );
   }, [items, searchTerm]);
+
+  const featuredItems = useMemo(() => {
+    return filteredItems.filter((item) => item.featured);
+  }, [filteredItems]);
+
+  const normalItems = useMemo(() => {
+    return filteredItems.filter((item) => !item.featured);
+  }, [filteredItems]);
 
   const handlePublish = async () => {
     const name = publishName.trim();
@@ -195,42 +241,50 @@ export default function MarketPanel({
               {loading ? '加载中...' : '暂无在线文件'}
             </div>
           )}
-          {filteredItems.map((item) => (
-            <div key={item.id} className={style.marketCard}>
-              <div className={style.cardHeader}>
-                <div className={style.cardInfo}>
-                  <div className={style.cardTitle}>{item.name}</div>
-                  <div className={style.cardMeta}>
-                    <span className={style.cardAuthor}>
-                      作者: {item.author}
-                    </span>
-                    <span className={style.cardModel}>机型: {item.model}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDownload(item)}
-                  className={style.downloadBtn}
-                  disabled={downloadingId === item.id}
-                >
-                  下载
-                </button>
+
+          {featuredItems.length > 0 && (
+            <>
+              <div className={style.sectionHeader}>
+                <span className={style.sectionTitle}>⭐ 精选程序</span>
+                <span className={style.sectionCount}>{featuredItems.length}</span>
               </div>
-              {item.description && (
-                <div className={style.cardDesc}>{item.description}</div>
-              )}
-              <span className={style.cardTime}>
-                {item.timestamp
-                  ? new Date(item.timestamp).toLocaleString(undefined, {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : '-'}
-              </span>
+              {featuredItems.map((item) => (
+                <MarketCard
+                  key={item.id}
+                  item={item}
+                  isFeatured={true}
+                  onDownload={handleDownload}
+                  downloadingId={downloadingId}
+                />
+              ))}
+            </>
+          )}
+
+          {normalItems.length > 0 && featuredItems.length > 0 && (
+            <div className={style.divider}>
+              <span className={style.dividerText}>普通程序</span>
             </div>
-          ))}
+          )}
+
+          {normalItems.length > 0 && (
+            <>
+              {featuredItems.length === 0 && (
+                <div className={style.sectionHeader}>
+                  <span className={style.sectionTitle}>普通程序</span>
+                  <span className={style.sectionCount}>{normalItems.length}</span>
+                </div>
+              )}
+              {normalItems.map((item) => (
+                <MarketCard
+                  key={item.id}
+                  item={item}
+                  isFeatured={false}
+                  onDownload={handleDownload}
+                  downloadingId={downloadingId}
+                />
+              ))}
+            </>
+          )}
         </div>
       </div>
 

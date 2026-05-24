@@ -5,6 +5,7 @@ import HexPanel from './HexPanel';
 import NewFilePanel from './NewFilePanel';
 import GadgetManager from './GadgetManager';
 import MarketPanel from './MarketPanel';
+import AdminPanel from './AdminPanel';
 import { parseRopInput } from './parser';
 
 const IDE_VERSION = 100;
@@ -29,6 +30,10 @@ const upgradeOldFile = (fileData) => {
 };
 
 export default function App() {
+  if (window.location.pathname === '/admin') {
+    return <AdminPanel />;
+  }
+
   const toolbarRef = useRef(null);
 
   const [isFileOpen, setIsFileOpen] = useState(false);
@@ -551,7 +556,7 @@ export default function App() {
           </div>
 
           <div className={style.versionInfo}>
-            <p>v2.0.2</p>
+            <p>v2.0.3</p>
           </div>
         </div>
 

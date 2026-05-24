@@ -1,0 +1,67 @@
+@use 'mixins' as m;
+@use 'variables' as v;
+
+.container {
+  padding: 20px;
+  height: 100vh;
+  overflow: auto;
+
+  h2 {
+    margin-bottom: 10px;
+  }
+}
+
+.error {
+  color: red;
+}
+
+.tableContainer {
+  margin-top: 10px;
+}
+
+.table {
+  border-collapse: collapse;
+  border-spacing: 0;
+
+  th,
+  td {
+    gap: 8px;
+    border: 1px solid #ccc;
+    padding: 4px 12px;
+  }
+
+  th {
+    background-color: #f5f5f5;
+  }
+}
+
+.editPanel {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.loginForm {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  @include m.button-variant(v.$gray-100, v.$gray-900);
+  border: 1px solid v.$gray-400;
+  padding: 4px 8px;
+}
+
+input {
+  @include m.input-base;
+  width: fit-content;
+}
