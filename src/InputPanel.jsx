@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, memo, forwardRef } from 'react';
 import style from './styles/InputPanel.module.scss';
+import { useTranslation } from './i18n';
 
 export default function InputPanel({
   input,
@@ -25,6 +26,7 @@ export default function InputPanel({
 
   const highlightContentRef = useRef(null);
   const editorRef = useRef(null);
+  const t = useTranslation();
 
   const findByte = useCallback(
     (start, end) => {
@@ -314,7 +316,7 @@ export default function InputPanel({
           onKeyUp={handleKeyUp}
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
-          placeholder="输入ROP代码..."
+          placeholder={t('input.placeholder')}
           className={style.codeInput}
           spellCheck="false"
         />

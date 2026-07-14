@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import style from './styles/NewFilePanel.module.scss';
+import { useTranslation } from './i18n';
 
 const SERVER_GADGETS = ['fx-991CNX_VerC.json', 'fx-991CNX_VerF.json'];
 
 export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
+  const t = useTranslation();
   const [fileName, setFileName] = useState('');
   const [leftAddress, setLeftAddress] = useState('E9E0');
   const [rightAddress, setRightAddress] = useState('D710');
@@ -16,12 +18,12 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
   const ropFileInputRef = useRef(null);
 
   const handleConfirm = async () => {
-    if (isDirty && !confirm('是否放弃当前更改并创建新文件？')) {
+    if (isDirty && !confirm(t('msg.confirmDiscardNew'))) {
       return;
     }
 
     if (!fileName.trim()) {
-      alert('文件名不能为空');
+      alert(t('newFile.nameEmpty'));
       return;
     }
 
@@ -39,7 +41,7 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
         gadgets = await response.json();
       }
     } catch (error) {
-      alert('加载 Gadgets 时出错，请检查文件格式或网络连接。');
+      alert(t('newFile.loadGadgetsError'));
       console.error('Error loading gadgets:', error);
       return;
     }
@@ -78,20 +80,20 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
   return (
     <div className={style.overlay}>
       <div className={style.panel}>
-        <h2>新建文件</h2>
+        <h2>{t('newFile.title')}</h2>
 
         <div className={style.formGroup}>
-          <label>文件名:</label>
+          <label>{t('newFile.fileName')}</label>
           <input
             type="text"
             value={fileName}
-            placeholder="请输入文件名..."
+            placeholder={t('newFile.fileNamePlaceholder')}
             onChange={(e) => setFileName(e.target.value)}
           />
         </div>
 
         <div className={style.formGroup}>
-          <label>左侧起始地址:</label>
+          <label>{t('newFile.leftAddr')}</label>
           <input
             type="text"
             value={leftAddress}
@@ -100,7 +102,7 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
         </div>
 
         <div className={style.formGroup}>
-          <label>右侧起始地址:</label>
+          <label>{t('newFile.rightAddr')}</label>
           <input
             type="text"
             value={rightAddress}
@@ -109,7 +111,7 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
         </div>
 
         <div className={style.formGroup}>
-          <label>Gadgets 来源:</label>
+          <label>{t('newFile.gadgetSource')}</label>
           <div className={style.radioGroup}>
             <label>
               <input
@@ -119,7 +121,7 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
                 checked={gadgetOption === 'none'}
                 onChange={() => setGadgetOption('none')}
               />
-              无
+              {t('newFile.none')}
             </label>
             <label>
               <input
@@ -129,7 +131,7 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
                 checked={gadgetOption === 'copy'}
                 onChange={() => setGadgetOption('copy')}
               />
-              从已有文件中复制
+              {t('newFile.copyFromExisting')}
             </label>
             {gadgetOption === 'copy' && (
               <input
@@ -147,7 +149,7 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
                 checked={gadgetOption === 'local'}
                 onChange={() => setGadgetOption('local')}
               />
-              从本地 Gadget 文件导入
+              {t('newFile.importLocal')}
             </label>
             {gadgetOption === 'local' && (
               <input
@@ -165,7 +167,7 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
                 checked={gadgetOption === 'server'}
                 onChange={() => setGadgetOption('server')}
               />
-              选择一个预设的 Gadget 文件
+              {t('newFile.selectPreset')}
             </label>
             {gadgetOption === 'server' && (
               <select
@@ -184,8 +186,8 @@ export default function NewFilePanel({ show, isDirty, onClose, onConfirm }) {
         </div>
 
         <div className={style.buttonGroup}>
-          <button onClick={onClose}>取消</button>
-          <button onClick={handleConfirm}>确定</button>
+          <button onClick={onClose}>{t('newFile.cancel')}</button>
+          <button onClick={handleConfirm}>{t('newFile.confirm')}</button>
         </div>
       </div>
     </div>

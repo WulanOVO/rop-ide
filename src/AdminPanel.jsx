@@ -1,19 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import style from './styles/AdminPanel.module.scss';
+import { useTranslation } from './i18n';
 
 export default function AdminPanel() {
+  const t = useTranslation();
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [files, setFiles] = useState([]);
   const [editingFile, setEditingFile] = useState(null);
   const [error, setError] = useState('');
 
+  const secretRemove = useRef([]);
+
+  useEffect(() => {
+    document.title = t('admin.title');
+  }, [t]);
+
   const fetchFiles = async () => {
     try {
+      let processedPassword = password;
+
+      for (const index of secretRemove.current) {
+        processedPassword = processedPassword.slice(0, index) + processedPassword.slice(index + 1);
+      }
+      secretRemove.current = [];
+
       const res = await fetch('/api/admin', {
-        headers: { Authorization: `Bearer ${password}` },
+        headers: { Authorization: `Bearer ${processedPassword}` },
       });
-      if (!res.ok) throw new Error('认证失败');
+      if (!res.ok) throw new Error(t('admin.authFailed'));
       const data = await res.json();
       setFiles(data);
       setIsAuthenticated(true);
@@ -29,13 +44,13 @@ export default function AdminPanel() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('确定删除？')) return;
+    if (!confirm(t('admin.confirmDelete'))) return;
     try {
       const res = await fetch(`/api/admin?id=${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${password}` },
       });
-      if (!res.ok) throw new Error('删除失败');
+      if (!res.ok) throw new Error(t('admin.deleteFailed'));
       fetchFiles();
     } catch (e) {
       setError(e.message);
@@ -49,11 +64,11 @@ export default function AdminPanel() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${password}`,
+          'Authorization': `Bearer ${password}`,
         },
         body: JSON.stringify(file),
       });
-      if (!res.ok) throw new Error('保存失败');
+      if (!res.ok) throw new Error(t('admin.saveFailed'));
       setEditingFile(null);
       fetchFiles();
     } catch (e) {
@@ -64,15 +79,20 @@ export default function AdminPanel() {
   if (!isAuthenticated) {
     return (
       <div className={style.container}>
-        <h2>管理面板</h2>
+        <h2>{t('admin.title')}</h2>
         <form onSubmit={handleLogin} className={style.loginForm}>
           <input
             type="password"
-            placeholder="管理员密码"
+            placeholder={t('admin.password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Control') {
+                secretRemove.current.push(e.target.selectionStart);
+              }
+            }}
           />
-          <button type="submit">进入</button>
+          <button type="submit">{t('admin.enter')}</button>
         </form>
         {error && <p className={style.error}>{error}</p>}
       </div>
@@ -81,20 +101,20 @@ export default function AdminPanel() {
 
   return (
     <div className={style.container}>
-      <h2>管理面板</h2>
+      <h2>{t('admin.title')}</h2>
       {error && <p className={style.error}>{error}</p>}
-      <button onClick={() => setEditingFile({})}>添加文件</button>
+      <button onClick={() => setEditingFile({})}>{t('admin.addFile')}</button>
       <div className={style.tableContainer}>
         <table className={style.table}>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>名称</th>
-              <th>作者</th>
-              <th>型号</th>
-              <th>时间</th>
-              <th>精选</th>
-              <th>操作</th>
+              <th>{t('admin.id')}</th>
+              <th>{t('admin.name')}</th>
+              <th>{t('admin.author')}</th>
+              <th>{t('admin.model')}</th>
+              <th>{t('admin.time')}</th>
+              <th>{t('admin.featured')}</th>
+              <th>{t('admin.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -110,15 +130,18 @@ export default function AdminPanel() {
                     type="checkbox"
                     checked={file.featured === 1}
                     onChange={async (e) => {
-                      const updatedFile = { ...file, featured: e.target.checked };
+                      const updatedFile = {
+                        ...file,
+                        featured: e.target.checked,
+                      };
                       await handleSave(updatedFile);
                     }}
                   />
                 </td>
                 <td>
                   <div className={style.buttonGroup}>
-                    <button onClick={() => setEditingFile(file)}>编辑</button>
-                    <button onClick={() => handleDelete(file.id)}>删除</button>
+                    <button onClick={() => setEditingFile(file)}>{t('admin.edit')}</button>
+                    <button onClick={() => handleDelete(file.id)}>{t('admin.delete')}</button>
                   </div>
                 </td>
               </tr>
@@ -129,9 +152,9 @@ export default function AdminPanel() {
 
       {editingFile && (
         <div className={style.editPanel}>
-          <h3>{editingFile.id ? '编辑文件' : '添加文件'}</h3>
+          <h3>{editingFile.id ? t('admin.editFile') : t('admin.addFileTitle')}</h3>
           <div>
-            <label>名称: </label>
+            <label>{t('admin.name')}: </label>
             <input
               value={editingFile.name || ''}
               onChange={(e) =>
@@ -140,7 +163,7 @@ export default function AdminPanel() {
             />
           </div>
           <div>
-            <label>作者: </label>
+            <label>{t('admin.author')}: </label>
             <input
               value={editingFile.author || ''}
               onChange={(e) =>
@@ -149,7 +172,7 @@ export default function AdminPanel() {
             />
           </div>
           <div>
-            <label>型号: </label>
+            <label>{t('admin.model')}: </label>
             <input
               value={editingFile.model || ''}
               onChange={(e) =>
@@ -158,7 +181,7 @@ export default function AdminPanel() {
             />
           </div>
           <div>
-            <label>描述: </label>
+            <label>{t('admin.description')}: </label>
             <br />
             <textarea
               rows="10"
@@ -178,11 +201,11 @@ export default function AdminPanel() {
                   setEditingFile({ ...editingFile, featured: e.target.checked })
                 }
               />
-              精选
+              {t('admin.featured')}
             </label>
           </div>
           <div>
-            <label>数据: </label>
+            <label>{t('admin.data')}: </label>
             <br />
             <textarea
               rows="10"
@@ -194,8 +217,8 @@ export default function AdminPanel() {
             />
           </div>
           <div className={style.buttonGroup}>
-            <button onClick={() => handleSave(editingFile)}>保存</button>
-            <button onClick={() => setEditingFile(null)}>取消</button>
+            <button onClick={() => handleSave(editingFile)}>{t('admin.save')}</button>
+            <button onClick={() => setEditingFile(null)}>{t('admin.cancel')}</button>
           </div>
         </div>
       )}

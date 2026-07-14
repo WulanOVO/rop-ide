@@ -7,14 +7,15 @@ import GadgetManager from './GadgetManager';
 import MarketPanel from './MarketPanel';
 import AdminPanel from './AdminPanel';
 import { parseRopInput } from './parser';
+import { useLanguage } from './i18n';
 
 const IDE_VERSION = 100;
 
-const upgradeOldFile = (fileData) => {
+const upgradeOldFile = (fileData, t) => {
   if (fileData.ideVersion < 100) {
-    const messages = [['已自动升级文件到最新版本', 'warn']];
+    const messages = [[t('msg.fileUpgraded'), 'warn']];
     if (fileData.gadgets) {
-      messages.push(['测试版 Gadgets 已停止支持', 'warn']);
+      messages.push([t('msg.betaGadgetsUnsupported'), 'warn']);
     }
     return {
       newFileData: {
@@ -34,6 +35,7 @@ export default function App() {
     return <AdminPanel />;
   }
 
+  const { t, language, setLanguage } = useLanguage();
   const toolbarRef = useRef(null);
 
   const [isFileOpen, setIsFileOpen] = useState(false);
@@ -45,7 +47,7 @@ export default function App() {
   const [selectedByte, setSelectedByte] = useState(null);
   const [selectedInput, setSelectedInput] = useState(null);
   const [byteToInputMap, setByteToInputMap] = useState([]);
-  const [currentFileName, setCurrentFileName] = useState('未命名.rop');
+  const [currentFileName, setCurrentFileName] = useState(t('msg.untitled'));
   const [leftStartAddress, setLeftStartAddress] = useState('E9E0');
   const [rightStartAddress, setRightStartAddress] = useState('D710');
   const [gadgets, setGadgets] = useState([]);
@@ -169,23 +171,23 @@ export default function App() {
     setShowNewFilePanel(false);
     setShowAutocomplete(false);
 
-    addMessage(`文件 "${settings.fileName}" 创建成功`, 'info');
+    addMessage(t('msg.fileCreated', { name: settings.fileName }), 'info');
   };
 
   const openFile = async () => {
-    if (isDirty && !confirm('是否放弃当前更改并打开新文件？')) {
+    if (isDirty && !confirm(t('msg.confirmDiscard'))) {
       return;
     }
 
     if (!('showOpenFilePicker' in window)) {
-      addMessage('当前浏览器不支持文件选择功能，建议使用最新版Chrome', 'error');
+      addMessage(t('msg.browserNotSupported'), 'error');
       return;
     }
 
     const [_fileHandle] = await window.showOpenFilePicker({
       types: [
         {
-          description: 'ROP文件',
+          description: 'ROP File',
           accept: { 'application/json': ['.rop'] },
         },
       ],
@@ -197,7 +199,7 @@ export default function App() {
       let fileData = JSON.parse(await file.text());
 
       if (fileData.ideVersion < IDE_VERSION) {
-        const { newFileData, messages } = upgradeOldFile(fileData);
+        const { newFileData, messages } = upgradeOldFile(fileData, t);
         fileData = newFileData;
 
         messages.forEach((message) => addMessage(...message));
@@ -205,20 +207,20 @@ export default function App() {
       } else if (fileData.ideVersion === IDE_VERSION) {
         setIsDirty(false);
       } else {
-        throw '文件版本错误';
+        throw t('msg.fileVersionError');
       }
 
       setInput(fileData.input || '');
       setSelectedInput(null);
       setSelectedByte(null);
-      setCurrentFileName(_fileHandle.name || '未命名.rop');
+      setCurrentFileName(_fileHandle.name || t('msg.untitled'));
       setLeftStartAddress(fileData.leftStartAddress || '0000');
       setRightStartAddress(fileData.rightStartAddress || '0000');
       setGadgets(fileData.gadgets || []);
 
-      addMessage(`文件 "${_fileHandle.name}" 打开成功`, 'info');
+      addMessage(t('msg.fileOpened', { name: _fileHandle.name }), 'info');
     } catch (err) {
-      addMessage('文件打开失败，请检查文件格式', 'error');
+      addMessage(t('msg.fileOpenFailed'), 'error');
       return;
     }
 
@@ -261,7 +263,7 @@ export default function App() {
       URL.revokeObjectURL(url);
 
       setIsDirty(false);
-      addMessage('文件保存成功', 'info');
+      addMessage(t('msg.fileSaved'), 'info');
       return;
     }
 
@@ -272,7 +274,7 @@ export default function App() {
       await writable.close();
 
       setIsDirty(false);
-      addMessage('文件保存成功', 'info');
+      addMessage(t('msg.fileSaved'), 'info');
       return;
     }
 
@@ -282,7 +284,7 @@ export default function App() {
         suggestedName: currentFileName,
         types: [
           {
-            description: 'ROP文件',
+            description: 'ROP File',
             accept: { 'application/json': ['.rop'] },
           },
         ],
@@ -295,13 +297,13 @@ export default function App() {
 
       setIsDirty(false);
       setFileHandle(_fileHandle);
-      addMessage('文件保存成功', 'info');
+      addMessage(t('msg.fileSaved'), 'info');
       return;
     } catch (err) {
       if (err.name === 'AbortError') {
         return;
       }
-      addMessage('文件保存失败', 'error');
+      addMessage(t('msg.fileSaveFailed'), 'error');
     }
   };
 
@@ -357,17 +359,17 @@ export default function App() {
 
   const handleLoadMarketFile = useCallback(
     (fileData, name) => {
-      if (isDirty && !confirm('是否放弃当前更改并打开新文件？')) {
+      if (isDirty && !confirm(t('msg.confirmDiscard'))) {
         return;
       }
 
       let normalizedData = fileData;
       if (normalizedData.ideVersion < IDE_VERSION) {
-        const { newFileData, messages } = upgradeOldFile(normalizedData);
+        const { newFileData, messages } = upgradeOldFile(normalizedData, t);
         normalizedData = newFileData;
         messages.forEach((message) => addMessage(...message));
       } else if (normalizedData.ideVersion !== IDE_VERSION) {
-        addMessage('文件版本错误', 'error');
+        addMessage(t('msg.fileVersionError'), 'error');
         return;
       }
 
@@ -376,7 +378,7 @@ export default function App() {
       setInput(normalizedData.input || '');
       setSelectedInput(null);
       setSelectedByte(null);
-      setCurrentFileName(fileName || '未命名.rop');
+      setCurrentFileName(fileName || t('msg.untitled'));
       setLeftStartAddress(normalizedData.leftStartAddress || '0000');
       setRightStartAddress(normalizedData.rightStartAddress || '0000');
       setGadgets(normalizedData.gadgets || []);
@@ -385,9 +387,9 @@ export default function App() {
       setFileHandle(null);
       setShowAutocomplete(false);
       setShowMarketPanel(false);
-      addMessage(`文件 "${fileName || '未命名.rop'}" 打开成功`, 'info');
+      addMessage(t('msg.fileOpened', { name: fileName || t('msg.untitled') }), 'info');
     },
-    [isDirty, addMessage, setShowMarketPanel],
+    [isDirty, addMessage, setShowMarketPanel, t],
   );
 
   // 根据当前文件名更新标题
@@ -422,7 +424,7 @@ export default function App() {
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isDirty) {
-        e.returnValue = '您确定要离开吗？所有未保存的更改都将丢失。';
+        e.returnValue = t('msg.unsavedChanges');
         return e.returnValue;
       }
     };
@@ -432,7 +434,7 @@ export default function App() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isDirty]);
+  }, [isDirty, t]);
 
   // 当输入或gadgets改变时重新解析输入
   useEffect(() => {
@@ -503,16 +505,16 @@ export default function App() {
         )}
 
         <div className={style.welcomeContainer}>
-          <h1>欢迎使用 RopIDE</h1>
+          <h1>{t('app.welcome')}</h1>
           <p className={style.welcomeInfo}>
-            开始一个新的项目或打开一个现有的项目
+            {t('app.welcomeInfo')}
           </p>
           <div className={style.buttonContainer}>
             <button className={style.welcomeButton} onClick={createNewFile}>
-              创建新文件
+              {t('app.newFile')}
             </button>
             <button className={style.welcomeButton} onClick={openFile}>
-              打开文件
+              {t('app.openFile')}
             </button>
             <div className={style.marketEntryContainer}>
               <button
@@ -521,11 +523,11 @@ export default function App() {
                 }`}
                 onClick={handleOpenMarket}
               >
-                程序广场
+                {t('app.market')}
                 {newFileCount > 0 && (
                   <span
                     className={style.newBadge}
-                  >{`${newFileCount}个新程序`}</span>
+                  >{t('app.newPrograms', { count: newFileCount })}</span>
                 )}
               </button>
             </div>
@@ -533,13 +535,13 @@ export default function App() {
 
           <div className={style.footer}>
             <p>
-              在找 xe1010ce20 的项目吗？
+              {t('app.footer.findProject')}
               <a
                 href="https://rop-ide.pages.dev"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                友谊链接
+                {t('app.footer.friendLink')}
               </a>
             </p>
             <p>
@@ -556,8 +558,16 @@ export default function App() {
           </div>
 
           <div className={style.versionInfo}>
-            <p>v2.0.3</p>
+            <p>{t('app.version')}</p>
           </div>
+
+          <button
+            className={style.langSwitch}
+            onClick={() => setLanguage(language === 'zh-CN' ? 'en-US' : 'zh-CN')}
+            title={t('lang.switch')}
+          >
+            {language === 'zh-CN' ? 'EN' : '中文'}
+          </button>
         </div>
 
         <MessagePanel messages={messages} onRemoveMessage={removeMessage} />
@@ -603,23 +613,23 @@ export default function App() {
         <button
           className={style.toolbarButton}
           onClick={createNewFile}
-          title="创建新文件"
+          title={t('toolbar.newTitle')}
         >
-          新建
+          {t('toolbar.new')}
         </button>
         <button
           className={style.toolbarButton}
           onClick={openFile}
-          title="打开文件 (Ctrl+O)"
+          title={t('toolbar.openTitle')}
         >
-          打开
+          {t('toolbar.open')}
         </button>
         <button
           className={`${style.toolbarButton} ${isDirty ? style.highlight : ''}`}
           onClick={saveFile}
-          title="保存文件 (Ctrl+S)"
+          title={t('toolbar.saveTitle')}
         >
-          保存
+          {t('toolbar.save')}
         </button>
         <button
           className={style.toolbarButton}
@@ -627,9 +637,9 @@ export default function App() {
             setShowGadgetManager(true);
             setShowAutocomplete(false);
           }}
-          title="管理Gadgets"
+          title={t('toolbar.gadgetsTitle')}
         >
-          {`Gadgets管理 (${gadgets.length})`}
+          {t('toolbar.gadgets', { count: gadgets.length })}
         </button>
         <input
           type="text"
@@ -643,9 +653,9 @@ export default function App() {
             setShowMarketPanel(true);
             setShowAutocomplete(false);
           }}
-          title="在线查看和发布程序"
+          title={t('toolbar.marketTitle')}
         >
-          程序广场
+          {t('app.market')}
         </button>
       </div>
 
@@ -667,7 +677,7 @@ export default function App() {
               }`}
               onClick={() => setActiveMobilePanel('input')}
             >
-              代码编辑
+              {t('mobile.codeEdit')}
             </button>
             <button
               className={`${style.mobilePanelTab} ${
@@ -675,7 +685,7 @@ export default function App() {
               }`}
               onClick={() => setActiveMobilePanel('hex')}
             >
-              十六进制
+              {t('mobile.hexView')}
             </button>
           </div>
         )}

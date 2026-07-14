@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import Svg from './svg';
 import style from './styles/GadgetManager.module.scss';
+import { useTranslation } from './i18n';
 
 export default function GadgetManager({
   gadgets,
@@ -9,6 +10,7 @@ export default function GadgetManager({
   highlightedGadget,
   setHighlightedGadget,
 }) {
+  const t = useTranslation();
   const [localGadgets, setLocalGadgets] = useState(gadgets);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingGadget, setEditingGadget] = useState(null);
@@ -121,6 +123,14 @@ export default function GadgetManager({
     );
   }, [localGadgets, searchTerm]);
 
+  // 根据筛选列表中的索引找到原始列表中的索引
+  const findOriginalIndex = useCallback((filteredIndex) => {
+    if (!searchTerm) return filteredIndex;
+
+    const filteredItem = filteredGadgets[filteredIndex];
+    return localGadgets.findIndex((g) => g === filteredItem);
+  }, [filteredGadgets, localGadgets, searchTerm]);
+
   const handleCancelEdit = useCallback(() => {
     setLocalGadgets(gadgets);
     setEditingIndex(null);
@@ -201,33 +211,36 @@ export default function GadgetManager({
     setHighlightedGadget(newGadget);
   }, [localGadgets, gadgets, setHighlightedGadget, editingIndex]);
 
-  const handleEditGadget = useCallback((gadget, index) => {
-    setEditingIndex(index);
+  const handleEditGadget = useCallback((gadget, filteredIndex) => {
+    const originalIndex = findOriginalIndex(filteredIndex);
+    setEditingIndex(originalIndex);
     setEditingGadget(gadget);
     setHighlightedGadget(gadget);
-  }, []);
+  }, [findOriginalIndex]);
 
   const handleDeleteGadget = useCallback(
-    (index) => {
-      if (!window.confirm('确定要删除这个Gadget吗？')) {
+    (filteredIndex) => {
+      const originalIndex = findOriginalIndex(filteredIndex);
+
+      if (!window.confirm(t('gadget.confirmDelete'))) {
         return;
       }
 
-      if (editingIndex === index) {
+      if (editingIndex === originalIndex) {
         handleCancelEdit();
         return;
       }
 
-      const updatedGadgets = localGadgets.filter((_, i) => i !== index);
+      const updatedGadgets = localGadgets.filter((_, i) => i !== originalIndex);
       setLocalGadgets(updatedGadgets);
       onUpdateGadgets(updatedGadgets);
 
       // 如果删除的项在正在编辑的项之前，调整编辑索引
-      if (editingIndex > index) {
+      if (editingIndex !== null && editingIndex > originalIndex) {
         setEditingIndex(editingIndex - 1);
       }
     },
-    [localGadgets, onUpdateGadgets, editingIndex]
+    [localGadgets, onUpdateGadgets, editingIndex, findOriginalIndex, t]
   );
 
   const handleSaveGadget = useCallback(() => {
@@ -236,10 +249,10 @@ export default function GadgetManager({
     }
 
     if (editingGadget.name.trim() === '') {
-      alert('请输入Gadget名称！');
+      alert(t('gadget.nameRequired'));
       return;
     } else if (editingGadget.addr.trim() === '') {
-      alert('请输入Gadget地址！');
+      alert(t('gadget.addrRequired'));
       return;
     }
 
@@ -262,7 +275,7 @@ export default function GadgetManager({
     setEditingIndex(null);
     setEditingGadget(null);
     setHighlightedGadget(null);
-  }, [localGadgets, editingGadget, editingIndex, onUpdateGadgets]);
+  }, [localGadgets, editingGadget, editingIndex, onUpdateGadgets, t]);
 
   const handleGadgetChange = useCallback((field, value) => {
     setEditingGadget((prev) => ({
@@ -317,12 +330,12 @@ export default function GadgetManager({
     <div className={style.overlay} onClick={onClose}>
       <div className={style.managerPanel} onClick={(e) => e.stopPropagation()}>
         <div className={style.header}>
-          <h2>Gadgets管理</h2>
+          <h2>{t('gadget.title')}</h2>
           <div className={style.panelActions}>
             <div className={style.searchContainer}>
               <input
                 type="text"
-                placeholder="搜索 gadgets..."
+                placeholder={t('gadget.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={style.searchInput}
@@ -332,51 +345,54 @@ export default function GadgetManager({
               onClick={handleExportGadgets}
               className={style.exportButton}
             >
-              导出
+              {t('gadget.export')}
             </button>
             <button onClick={handleAddGadget} className={style.addButton}>
               <Svg size={16} icon="add" />
-              添加Gadget
+              {t('gadget.add')}
             </button>
             <button onClick={onClose} className={style.closeButton}>
               <Svg size={16} icon="close" />
-              关闭
+              {t('gadget.close')}
             </button>
           </div>
         </div>
 
         <div ref={gadgetListRef} className={style.gadgetList}>
-          {filteredGadgets.map((gadget, index) => (
-            <GadgetCard
-              key={index}
-              gadget={gadget}
-              index={index}
-              onEdit={() => handleEditGadget(gadget, index)}
-              onDelete={() => handleDeleteGadget(index)}
-              isEditing={editingIndex === index}
-              editingGadget={editingIndex === index ? editingGadget : null}
-              onSave={handleSaveGadget}
-              onCancel={handleCancelEdit}
-              onChange={handleGadgetChange}
-              onTagChange={handleTagChange}
-              onAddTag={handleAddTag}
-              onRemoveTag={handleRemoveTag}
-              newTag={newTag}
-              isHighlighted={
-                highlightedGadget && highlightedGadget.name === gadget.name
-              }
-              ref={
-                highlightedGadget && highlightedGadget.name === gadget.name
-                  ? highlightedGadgetRef
-                  : null
-              }
-              draggable={editingIndex === null}
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragEnd={handleDragEnd}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, index)}
-            />
-          ))}
+          {filteredGadgets.map((gadget, filteredIndex) => {
+            const originalIndex = findOriginalIndex(filteredIndex);
+            return (
+              <GadgetCard
+                key={`${gadget.name}-${originalIndex}`}
+                gadget={gadget}
+                index={filteredIndex}
+                onEdit={() => handleEditGadget(gadget, filteredIndex)}
+                onDelete={() => handleDeleteGadget(filteredIndex)}
+                isEditing={editingIndex === originalIndex}
+                editingGadget={editingIndex === originalIndex ? editingGadget : null}
+                onSave={handleSaveGadget}
+                onCancel={handleCancelEdit}
+                onChange={handleGadgetChange}
+                onTagChange={handleTagChange}
+                onAddTag={handleAddTag}
+                onRemoveTag={handleRemoveTag}
+                newTag={newTag}
+                isHighlighted={
+                  highlightedGadget && highlightedGadget.name === gadget.name
+                }
+                ref={
+                  highlightedGadget && highlightedGadget.name === gadget.name
+                    ? highlightedGadgetRef
+                    : null
+                }
+                draggable={editingIndex === null}
+                onDragStart={(e) => handleDragStart(e, originalIndex)}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, originalIndex)}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
@@ -404,6 +420,8 @@ function GadgetCard({
   onDragOver,
   onDrop,
 }) {
+  const t = useTranslation();
+
   if (isEditing && editingGadget) {
     return (
       <div
@@ -424,12 +442,12 @@ function GadgetCard({
               }
             }}
             className={style.nameInput}
-            placeholder="名称"
+            placeholder={t('gadget.name')}
           />
         </div>
 
         <div className={style.formGroup}>
-          <label>地址:</label>
+          <label>{t('gadget.address')}</label>
           <input
             type="text"
             value={editingGadget.addr}
@@ -441,23 +459,23 @@ function GadgetCard({
               }
             }}
             className={style.formInput}
-            placeholder="地址"
+            placeholder={t('gadget.addressPlaceholder')}
           />
         </div>
 
         <div className={style.formGroup}>
-          <label>描述:</label>
+          <label>{t('gadget.desc')}</label>
           <textarea
             value={editingGadget.desc}
             onChange={(e) => onChange('desc', e.target.value)}
             className={style.formTextarea}
             rows="4"
-            placeholder="描述"
+            placeholder={t('gadget.descPlaceholder')}
           />
         </div>
 
         <div className={style.formGroup}>
-          <label>标签:</label>
+          <label>{t('gadget.tags')}</label>
           <div className={style.tagsContainer}>
             {editingGadget.tags &&
               editingGadget.tags.map((tag, tagIndex) => (
@@ -469,7 +487,7 @@ function GadgetCard({
                   <button
                     onClick={() => onRemoveTag(tagIndex)}
                     className={style.removeTagButton}
-                    title="移除标签"
+                    title={t('gadget.removeTag')}
                   >
                     <Svg size={14} icon="close" />
                   </button>
@@ -480,7 +498,7 @@ function GadgetCard({
           <div className={style.addTagForm}>
             <input
               type="text"
-              placeholder="标签名称"
+              placeholder={t('gadget.tagName')}
               value={newTag.name}
               onChange={(e) => onTagChange('name', e.target.value)}
               className={style.tagInput}
@@ -496,28 +514,28 @@ function GadgetCard({
               onChange={(e) => onTagChange('color', e.target.value)}
               className={style.tagSelect}
             >
-              <option value="gray">灰色</option>
-              <option value="blue">蓝色</option>
-              <option value="yellow">黄色</option>
-              <option value="orange">橙色</option>
-              <option value="green">绿色</option>
-              <option value="purple">紫色</option>
+              <option value="gray">{t('gadget.gray')}</option>
+              <option value="blue">{t('gadget.blue')}</option>
+              <option value="yellow">{t('gadget.yellow')}</option>
+              <option value="orange">{t('gadget.orange')}</option>
+              <option value="green">{t('gadget.green')}</option>
+              <option value="purple">{t('gadget.purple')}</option>
             </select>
             <button onClick={onAddTag} className={style.addButton}>
               <Svg size={16} icon="add" />
-              添加
+              {t('gadget.addTag')}
             </button>
           </div>
         </div>
 
         <div className={style.cardActions}>
-          <button onClick={onSave} className={style.saveButton} title="保存">
+          <button onClick={onSave} className={style.saveButton} title={t('admin.save')}>
             <Svg size={16} icon="ok" />
           </button>
           <button
             onClick={onCancel}
             className={style.cancelButton}
-            title="取消"
+            title={t('admin.cancel')}
           >
             <Svg size={16} icon="close" />
           </button>
@@ -540,10 +558,10 @@ function GadgetCard({
       onDrop={onDrop}
     >
       <div className={style.cardActions}>
-        <button onClick={onEdit} className={style.iconButton} title="编辑">
+        <button onClick={onEdit} className={style.iconButton} title={t('gadget.edit')}>
           <Svg size={16} icon="edit" />
         </button>
-        <button onClick={onDelete} className={style.iconButton} title="删除">
+        <button onClick={onDelete} className={style.iconButton} title={t('gadget.delete')}>
           <Svg size={16} icon="delete" />
         </button>
       </div>
@@ -564,7 +582,7 @@ function GadgetCard({
         )}
       </div>
 
-      <span className={style.gadgetAddress}>地址: {gadget.addr}</span>
+      <span className={style.gadgetAddress}>{t('gadget.address')} {gadget.addr}</span>
 
       <p className={style.gadgetDesc}>{gadget.desc}</p>
     </div>

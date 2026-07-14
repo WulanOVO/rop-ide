@@ -121,6 +121,20 @@ html {
     font-size: v.$font-size-xs;
     color: v.$gray-600;
   }
+
+  .langSwitch {
+    @include m.button-variant(v.$gray-200, v.$gray-800);
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: v.$border-radius;
+
+    &:hover {
+      background-color: v.$gray-300;
+    }
+  }
 }
 
 .pageContainer {

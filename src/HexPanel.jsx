@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import style from './styles/HexPanel.module.scss';
+import { useTranslation } from './i18n';
 
 function HexDisplay({
   hexDisplay,
@@ -68,7 +69,8 @@ export default function HexPanel({
   onRightAddrChange,
   parsedInput,
 }) {
-  const [copyBtnText, setCopyBtnText] = useState('复制');
+  const t = useTranslation();
+  const [copyBtnText, setCopyBtnText] = useState(t('hex.copy'));
 
   const handleLeftAddrChange = useCallback((e) => {
     const value = e.target.value.toUpperCase();
@@ -88,18 +90,18 @@ export default function HexPanel({
 
   const copyHexContent = useCallback(() => {
     if (parsedInput.errorCount > 0) {
-      alert(`存在${parsedInput.errorCount}个语法错误，建议检查`);
+      alert(t('hex.errorCount', { count: parsedInput.errorCount }));
     }
 
     const hexContent = hexDisplay.map((row) => row.join(' ')).join('\n');
 
     navigator.clipboard.writeText(hexContent).then(() => {
-      setCopyBtnText('已复制✔');
+      setCopyBtnText(t('hex.copied'));
       setTimeout(() => {
-        setCopyBtnText('复制');
+        setCopyBtnText(t('hex.copy'));
       }, 1500);
     });
-  }, [hexDisplay]);
+  }, [hexDisplay, parsedInput, t]);
 
   // 寻找字节对应的输入区部分
   const findInputRange = useCallback(
@@ -230,7 +232,7 @@ export default function HexPanel({
     <div className={style.hexPanel}>
       <div className={style.hexDisplaySetting}>
         <div className={style.addressInputContainer}>
-          <label>左侧起始地址:</label>
+          <label>{t('hex.leftAddr')}</label>
           <input
             className={style.addressInput}
             value={leftStartAddress}
@@ -238,7 +240,7 @@ export default function HexPanel({
           />
         </div>
         <div className={style.addressInputContainer}>
-          <label>右侧起始地址:</label>
+          <label>{t('hex.rightAddr')}</label>
           <input
             className={style.addressInput}
             value={rightStartAddress}
@@ -250,7 +252,7 @@ export default function HexPanel({
             parsedInput.errorCount > 0 ? style.error : ''
           }`}
           onClick={copyHexContent}
-          title="复制全部十六进制内容 (Ctrl+Alt+C)"
+          title={t('hex.copyTitle')}
         >
           {copyBtnText}
         </button>
@@ -266,7 +268,7 @@ export default function HexPanel({
       <div className={style.hexFootbar}>
         {selectedByte && (
           <div className={style.selectedAddresses}>
-            选中地址:
+            {t('hex.selectedAddr')}
             <span className={style.leftSelectedAddress}>
               {getSelectedAddresses().left}
             </span>
@@ -276,7 +278,7 @@ export default function HexPanel({
           </div>
         )}
 
-        <div className={style.bytesTotal}>字节总数: {countBytes()}</div>
+        <div className={style.bytesTotal}>{t('hex.bytesTotal', { count: countBytes() })}</div>
       </div>
     </div>
   );

@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import Svg from './svg';
 import style from './styles/MarketPanel.module.scss';
+import { useTranslation, useLanguage } from './i18n';
 
 const modelOptions = ['fx-991CNX (VerC)', 'fx-991CNX (VerF)'];
 
-const normalizeName = (name) => {
-  if (!name) return '未命名';
+const normalizeName = (name, t) => {
+  if (!name) return t('market.unnamed');
   return name.replace(/\.rop$/i, '');
 };
 
-const MarketCard = ({ item, isFeatured, onDownload, downloadingId }) => {
+const MarketCard = ({ item, isFeatured, onDownload, downloadingId, t }) => {
   return (
     <div className={`${style.marketCard} ${isFeatured ? style.featured : ''}`}>
       <div className={style.cardHeader}>
@@ -19,8 +20,8 @@ const MarketCard = ({ item, isFeatured, onDownload, downloadingId }) => {
             {isFeatured && <span className={style.featuredStar}>★</span>}
           </div>
           <div className={style.cardMeta}>
-            <span className={style.cardAuthor}>作者: {item.author}</span>
-            <span className={style.cardModel}>机型: {item.model}</span>
+            <span className={style.cardAuthor}>{t('market.author', { author: item.author })}</span>
+            <span className={style.cardModel}>{t('market.modelLabel', { model: item.model })}</span>
           </div>
         </div>
         <button
@@ -28,7 +29,7 @@ const MarketCard = ({ item, isFeatured, onDownload, downloadingId }) => {
           className={style.downloadBtn}
           disabled={downloadingId === item.id}
         >
-          下载
+          {t('market.download')}
         </button>
       </div>
       {item.description && <div className={style.cardDesc}>{item.description}</div>}
@@ -56,6 +57,8 @@ export default function MarketPanel({
   onLoadFile,
   addMessage,
 }) {
+  const t = useTranslation();
+  const { formatDate } = useLanguage();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -73,12 +76,12 @@ export default function MarketPanel({
     try {
       const res = await fetch('/api/market');
       if (!res.ok) {
-        throw new Error('获取列表失败');
+        throw new Error(t('market.emptyList'));
       }
       const data = await res.json();
       setItems(Array.isArray(data) ? data : []);
     } catch (e) {
-      addMessage(e.message || '获取列表失败', 'error');
+      addMessage(e.message || t('market.emptyList'), 'error');
     } finally {
       setLoading(false);
     }
@@ -92,10 +95,10 @@ export default function MarketPanel({
 
   useEffect(() => {
     if (!show) return;
-    setPublishName(normalizeName(currentFileName));
+    setPublishName(normalizeName(currentFileName, t));
     setPublishDescription('');
     setShowPublishModal(false);
-  }, [show, currentFileName]);
+  }, [show, currentFileName, t]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm) return items;
@@ -133,23 +136,23 @@ export default function MarketPanel({
         : publishModel.trim();
 
     if (!name) {
-      addMessage('请输入文件名称', 'error');
+      addMessage(t('market.enterFileName'), 'error');
       return;
     }
     if (!publishAuthor.trim()) {
-      addMessage('请输入作者名称', 'error');
+      addMessage(t('market.enterAuthor'), 'error');
       return;
     }
     if (!model) {
-      addMessage('请选择机型', 'error');
+      addMessage(t('market.selectModel'), 'error');
       return;
     }
     if (!publishDescription.trim()) {
-      addMessage('请输入文件描述', 'error');
+      addMessage(t('market.enterDesc'), 'error');
       return;
     }
     if (!currentFileData) {
-      addMessage('当前文件数据为空', 'error');
+      addMessage(t('market.noFileData'), 'error');
       return;
     }
     setPublishing(true);
@@ -169,12 +172,12 @@ export default function MarketPanel({
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        throw new Error('发布失败');
+        throw new Error(t('market.publishFailed'));
       }
-      addMessage('发布成功', 'info');
+      addMessage(t('market.publishSuccess'), 'info');
       await loadMarketList();
     } catch (e) {
-      addMessage(e.message || '发布失败', 'error');
+      addMessage(e.message || t('market.publishFailed'), 'error');
     } finally {
       setPublishing(false);
       setShowPublishModal(false);
@@ -187,16 +190,16 @@ export default function MarketPanel({
     try {
       const res = await fetch(`/api/market?id=${item.id}`);
       if (!res.ok) {
-        throw new Error('下载失败');
+        throw new Error(t('market.downloadFailed'));
       }
       const data = await res.json();
       if (!data?.data) {
-        throw new Error('文件内容为空');
+        throw new Error(t('market.fileEmpty'));
       }
       const fileData = JSON.parse(data.data);
       onLoadFile(fileData, item.name);
     } catch (e) {
-      addMessage(e.message || '下载失败', 'error');
+      addMessage(e.message || t('market.downloadFailed'), 'error');
     } finally {
       setDownloadingId(null);
     }
@@ -208,12 +211,12 @@ export default function MarketPanel({
     <div className={style.overlay} onClick={onClose}>
       <div className={style.marketPanel} onClick={(e) => e.stopPropagation()}>
         <div className={style.header}>
-          <h2>程序广场</h2>
+          <h2>{t('market.title')}</h2>
           <div className={style.panelActions}>
             <div className={style.searchContainer}>
               <input
                 type="text"
-                placeholder="搜索 文件/作者/机型/描述..."
+                placeholder={t('market.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={style.searchInput}
@@ -225,12 +228,12 @@ export default function MarketPanel({
                 className={style.primaryButton}
               >
                 <Svg size={16} icon="add" />
-                发布
+                {t('market.publish')}
               </button>
             )}
             <button onClick={onClose} className={style.closeButton}>
               <Svg size={16} icon="close" />
-              关闭
+              {t('market.close')}
             </button>
           </div>
         </div>
@@ -238,14 +241,14 @@ export default function MarketPanel({
         <div className={style.marketList}>
           {filteredItems.length === 0 && (
             <div className={style.emptyState}>
-              {loading ? '加载中...' : '暂无在线文件'}
+              {loading ? t('market.loading') : t('market.empty')}
             </div>
           )}
 
           {featuredItems.length > 0 && (
             <>
               <div className={style.sectionHeader}>
-                <span className={style.sectionTitle}>⭐ 精选程序</span>
+                <span className={style.sectionTitle}>{t('market.featured')}</span>
                 <span className={style.sectionCount}>{featuredItems.length}</span>
               </div>
               {featuredItems.map((item) => (
@@ -255,6 +258,7 @@ export default function MarketPanel({
                   isFeatured={true}
                   onDownload={handleDownload}
                   downloadingId={downloadingId}
+                  t={t}
                 />
               ))}
             </>
@@ -262,7 +266,7 @@ export default function MarketPanel({
 
           {normalItems.length > 0 && featuredItems.length > 0 && (
             <div className={style.divider}>
-              <span className={style.dividerText}>普通程序</span>
+              <span className={style.dividerText}>{t('market.normal')}</span>
             </div>
           )}
 
@@ -270,7 +274,7 @@ export default function MarketPanel({
             <>
               {featuredItems.length === 0 && (
                 <div className={style.sectionHeader}>
-                  <span className={style.sectionTitle}>普通程序</span>
+                  <span className={style.sectionTitle}>{t('market.normal')}</span>
                   <span className={style.sectionCount}>{normalItems.length}</span>
                 </div>
               )}
@@ -281,6 +285,7 @@ export default function MarketPanel({
                   isFeatured={false}
                   onDownload={handleDownload}
                   downloadingId={downloadingId}
+                  t={t}
                 />
               ))}
             </>
@@ -298,82 +303,82 @@ export default function MarketPanel({
             onClick={(e) => e.stopPropagation()}
           >
             <div className={style.publishHeader}>
-              <h3>发布新程序</h3>
+              <h3>{t('market.publishTitle')}</h3>
               <button
                 className={style.closeButton}
                 onClick={() => setShowPublishModal(false)}
               >
                 <Svg size={16} icon="close" />
-                关闭
+                {t('market.close')}
               </button>
             </div>
             <div className={style.publishBody}>
               <div className={style.formGroup}>
                 <label>
-                  文件名<span className={style.required}>*</span>
+                  {t('market.fileName')}<span className={style.required}>{t('market.required')}</span>
                 </label>
                 <input
                   type="text"
                   value={publishName}
                   onChange={(e) => setPublishName(e.target.value)}
                   className={style.formInput}
-                  placeholder="请输入文件名"
+                  placeholder={t('market.fileName')}
                 />
               </div>
               <div className={style.formGroup}>
                 <label>
-                  作者<span className={style.required}>*</span>
+                  {t('market.authorName')}<span className={style.required}>{t('market.required')}</span>
                 </label>
                 <input
                   type="text"
                   value={publishAuthor}
                   onChange={(e) => setPublishAuthor(e.target.value)}
                   className={style.formInput}
-                  placeholder="请输入作者名"
+                  placeholder={t('market.authorName')}
                 />
               </div>
               <div className={style.formGroup}>
                 <label>
-                  机型<span className={style.required}>*</span>
+                  {t('market.modelSelect')}<span className={style.required}>{t('market.required')}</span>
                 </label>
                 <select
                   value={publishModel}
                   onChange={(e) => setPublishModel(e.target.value)}
                   className={style.formSelect}
                 >
-                  <option value="">请选择机型</option>
+                  <option value="">{t('market.modelPlaceholder')}</option>
                   {modelOptions.map((model) => (
                     <option key={model} value={model}>
                       {model}
                     </option>
                   ))}
-                  <option value="other">其他</option>
+                  <option value="other">{t('market.otherModel')}</option>
                 </select>
               </div>
               {publishModel === 'other' && (
                 <div className={style.formGroup}>
                   <label>
-                    其他机型<span className={style.required}>*</span>
+                    {t('market.otherModelLabel')}<span className={style.required}>{t('market.required')}</span>
                   </label>
                   <input
                     type="text"
                     value={publishOtherModel}
                     onChange={(e) => setPublishOtherModel(e.target.value)}
                     className={style.formInput}
-                    placeholder="请输入其他机型"
+                    placeholder={t('market.otherModelPlaceholder')}
                   />
                 </div>
               )}
               <div className={style.formGroupWide}>
                 <label>
-                  描述<span className={style.required}>*</span>
+                  {t('market.description')}<span className={style.required}>{t('market.required')}</span>
                 </label>
                 <textarea
                   value={publishDescription}
                   onChange={(e) => setPublishDescription(e.target.value)}
                   className={style.formTextarea}
                   rows="8"
-                  placeholder="可选描述"
+                  placeholder={t('market.descriptionPlaceholder')}
                 />
               </div>
             </div>
@@ -382,14 +387,14 @@ export default function MarketPanel({
                 onClick={() => setShowPublishModal(false)}
                 className={style.secondaryButton}
               >
-                取消
+                {t('admin.cancel')}
               </button>
               <button
                 onClick={handlePublish}
                 className={style.primaryButton}
                 disabled={publishing}
               >
-                确认发布
+                {t('market.confirmPublish')}
               </button>
             </div>
           </div>
