@@ -9,7 +9,7 @@ export default {
   'app.newPrograms': '{count}个新程序',
   'app.footer.findProject': '在找 xe1010ce20 的项目吗？',
   'app.footer.friendLink': '友谊链接',
-  'app.version': 'v2.2.0',
+  'app.version': 'v2.2.1',
 
   // Toolbar
   'toolbar.new': '新建',

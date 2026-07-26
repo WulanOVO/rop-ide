@@ -9,7 +9,7 @@ export default {
   'app.newPrograms': '{count} new',
   'app.footer.findProject': 'Looking for xe1010ce20\'s project?',
   'app.footer.friendLink': 'Friend Link',
-  'app.version': 'v2.2.0',
+  'app.version': 'v2.2.1',
 
   // Toolbar
   'toolbar.new': 'New',

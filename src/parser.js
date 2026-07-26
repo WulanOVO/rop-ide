@@ -85,15 +85,12 @@ export function parseRopInput(input, gadgets, options = {}) {
     if (symbol !== '') {
       hasErrors = true;
     } else if (!isNaN(value)) {
-      if (
-        !(allowUndefinedAsDeferred && deferred) &&
-        (value > 0xffff || value < -0x8000)
-      ) {
-        hasErrors = true;
-      }
+      // 负值处理：转换为补码
       if (value < 0) {
-        value = 0xffff + value + 1; // 负值处理
+        value = 0x10000 + value;
       }
+      // 截断到 16 位
+      value &= 0xffff;
     } else {
       hasErrors = true;
     }
@@ -150,13 +147,14 @@ export function parseRopInput(input, gadgets, options = {}) {
 
             if (
               /^-?[0-9a-fA-F]+$/.test(parts[1]) &&
-              !isNaN(intValue) &&
-              intValue <= 0xffff &&
-              intValue >= -0x8000
+              !isNaN(intValue)
             ) {
-              if (intValue > 0xffff) {
-                intValue &= 0xffff; // 截取低16位
+              // 负值处理：转换为补码
+              if (intValue < 0) {
+                intValue = 0x10000 + intValue;
               }
+              // 截断到 16 位
+              intValue &= 0xffff;
             } else {
               errorCount++;
               pushSpan('constant,value,warning', constantContent);
@@ -250,6 +248,7 @@ export function parseRopInput(input, gadgets, options = {}) {
           let deferred = firstPass.deferred || /\$/.test(inner);
 
           if (hasErrors) {
+            errorCount++;
             pushSpan('value,closed,warning', valueContent);
             i = j + 1;
             continue;
@@ -298,8 +297,6 @@ export function parseRopInput(input, gadgets, options = {}) {
         const anchorContent = line.substring(i, hasClose ? j + 1 : j);
 
         if (hasClose) {
-          pushSpan('anchor,closed', anchorContent);
-
           // 记录锚点为常量（值依赖左右起始地址与当前字节流长度）
           let anchorName = line.substring(i + 1, j);
           let addrStart = parseInt(rightStartAddress || '0', 16);
@@ -307,17 +304,26 @@ export function parseRopInput(input, gadgets, options = {}) {
             anchorName = anchorName.substring(1);
             addrStart = parseInt(leftStartAddress || '0', 16);
           }
-          let deferredBytesBeforeAnchor = 0;
-          for (const p of deferredValuePatches) {
-            if (p.startHexIndex <= hexChars.length) {
-              deferredBytesBeforeAnchor += p.bytesToInsert || 2;
+
+          // 检查是否重复定义
+          if (constants[anchorName] !== undefined) {
+            errorCount++;
+            pushSpan('anchor,closed,warning', anchorContent);
+          } else {
+            pushSpan('anchor,closed', anchorContent);
+
+            let deferredBytesBeforeAnchor = 0;
+            for (const p of deferredValuePatches) {
+              if (p.startHexIndex <= hexChars.length) {
+                deferredBytesBeforeAnchor += p.bytesToInsert || 2;
+              }
             }
+            const addr =
+              addrStart +
+              Math.ceil(hexChars.length / 2) +
+              deferredBytesBeforeAnchor;
+            constants[anchorName] = addr;
           }
-          const addr =
-            addrStart +
-            Math.ceil(hexChars.length / 2) +
-            deferredBytesBeforeAnchor;
-          constants[anchorName] = addr;
         } else {
           pushSpan('anchor', anchorContent);
         }
