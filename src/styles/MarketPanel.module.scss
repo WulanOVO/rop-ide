@@ -108,6 +108,14 @@
   resize: vertical;
 }
 
+.challengeHint {
+  margin-bottom: 6px;
+  color: v.$gray-600;
+  font-size: v.$font-size-sm;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
 .publishOverlay {
   position: fixed;
   background: rgba(0, 0, 0, 0.35);

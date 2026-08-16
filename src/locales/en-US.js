@@ -9,7 +9,7 @@ export default {
   'app.newPrograms': '{count} new',
   'app.footer.findProject': 'Looking for xe1010ce20\'s project?',
   'app.footer.friendLink': 'Friend Link',
-  'app.version': 'v2.2.1',
+  'app.version': 'v2.3.0',
 
   // Toolbar
   'toolbar.new': 'New',
@@ -144,7 +144,7 @@ export default {
   'market.otherModelLabel': 'Other Model',
   'market.otherModelPlaceholder': 'Enter other model',
   'market.description': 'Description',
-  'market.descriptionPlaceholder': 'Optional description',
+  'market.descriptionPlaceholder': 'Enter description...',
   'market.confirmPublish': 'Confirm Publish',
   'market.required': '*',
   'market.publishSuccess': 'Published successfully',
@@ -157,6 +157,14 @@ export default {
   'market.selectModel': 'Please select model',
   'market.enterDesc': 'Please enter file description',
   'market.noFileData': 'Current file data is empty',
+  'market.challengeTitle': 'Expert Verification',
+  'market.challengeHint': 'To prevent spam or automated submissions, please enter the two bytes at {offset} in the fx-991CNX VerF ROM, in hexadecimal format (e.g. 1A2B), to prove that you are a member of the community.',
+  'market.challengePlaceholder': 'Two bytes in hex, e.g. 1A2B',
+  'market.challengeLoading': 'Loading challenge...',
+  'market.challengeLoadFailed': 'Failed to load challenge, please retry later',
+  'market.challengeInvalid': 'Please enter a 4-digit hex answer',
+  'market.challengeWrong': 'Verification failed: wrong bytes, a new challenge was issued',
+  'market.challengeExpired': 'Challenge expired, a new one was issued',
 
   // Language Switcher
   'lang.switch': 'Switch Language',

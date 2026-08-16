@@ -70,6 +70,9 @@ export default function MarketPanel({
   const [publishModel, setPublishModel] = useState('');
   const [publishOtherModel, setPublishOtherModel] = useState('');
   const [publishDescription, setPublishDescription] = useState('');
+  const [challenge, setChallenge] = useState(null);
+  const [challengeAnswer, setChallengeAnswer] = useState('');
+  const [challengeLoading, setChallengeLoading] = useState(false);
 
   const loadMarketList = async () => {
     setLoading(true);
@@ -85,6 +88,28 @@ export default function MarketPanel({
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchChallenge = async () => {
+    setChallengeLoading(true);
+    try {
+      const res = await fetch('/api/market?challenge=true');
+      if (!res.ok) {
+        throw new Error();
+      }
+      const data = await res.json();
+      setChallenge(data);
+    } catch {
+      setChallenge(null);
+    } finally {
+      setChallengeLoading(false);
+    }
+  };
+
+  const openPublishModal = () => {
+    setShowPublishModal(true);
+    setChallengeAnswer('');
+    fetchChallenge();
   };
 
   useEffect(() => {
@@ -155,6 +180,18 @@ export default function MarketPanel({
       addMessage(t('market.noFileData'), 'error');
       return;
     }
+    const normalizedAnswer = challengeAnswer
+      .replace(/[^0-9a-fA-F]/g, '')
+      .toLowerCase();
+    if (!challenge) {
+      addMessage(t('market.challengeLoadFailed'), 'error');
+      fetchChallenge();
+      return;
+    }
+    if (!/^[0-9a-f]{4}$/.test(normalizedAnswer)) {
+      addMessage(t('market.challengeInvalid'), 'error');
+      return;
+    }
     setPublishing(true);
 
     try {
@@ -165,6 +202,8 @@ export default function MarketPanel({
         description: publishDescription.trim(),
         data: JSON.stringify(currentFileData),
         timestamp: Date.now(),
+        challengeToken: challenge.token,
+        challengeAnswer: normalizedAnswer,
       };
       const res = await fetch('/api/market', {
         method: 'POST',
@@ -172,15 +211,26 @@ export default function MarketPanel({
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
+        if (res.status === 403 || res.status === 410) {
+          addMessage(
+            res.status === 403
+              ? t('market.challengeWrong')
+              : t('market.challengeExpired'),
+            'error',
+          );
+          setChallengeAnswer('');
+          await fetchChallenge();
+          return;
+        }
         throw new Error(t('market.publishFailed'));
       }
       addMessage(t('market.publishSuccess'), 'info');
+      setShowPublishModal(false);
       await loadMarketList();
     } catch (e) {
       addMessage(e.message || t('market.publishFailed'), 'error');
     } finally {
       setPublishing(false);
-      setShowPublishModal(false);
     }
   };
 
@@ -224,7 +274,7 @@ export default function MarketPanel({
             </div>
             {withPublishBtn && (
               <button
-                onClick={() => setShowPublishModal(true)}
+                onClick={openPublishModal}
                 className={style.primaryButton}
               >
                 <Svg size={16} icon="add" />
@@ -381,6 +431,32 @@ export default function MarketPanel({
                   placeholder={t('market.descriptionPlaceholder')}
                 />
               </div>
+              <div className={style.formGroupWide}>
+                <label>
+                  {t('market.challengeTitle')}<span className={style.required}>{t('market.required')}</span>
+                </label>
+                <div className={style.challengeHint}>
+                  {challengeLoading
+                    ? t('market.challengeLoading')
+                    : challenge
+                      ? t('market.challengeHint', {
+                          offset: `0x${challenge.offset
+                            .toString(16)
+                            .toUpperCase()
+                            .padStart(4, '0')}`,
+                        })
+                      : t('market.challengeLoadFailed')}
+                </div>
+                <input
+                  type="text"
+                  value={challengeAnswer}
+                  onChange={(e) => setChallengeAnswer(e.target.value)}
+                  className={style.formInput}
+                  maxLength={9}
+                  placeholder={t('market.challengePlaceholder')}
+                  disabled={!challenge}
+                />
+              </div>
             </div>
             <div className={style.publishActions}>
               <button
@@ -392,7 +468,7 @@ export default function MarketPanel({
               <button
                 onClick={handlePublish}
                 className={style.primaryButton}
-                disabled={publishing}
+                disabled={publishing || challengeLoading}
               >
                 {t('market.confirmPublish')}
               </button>

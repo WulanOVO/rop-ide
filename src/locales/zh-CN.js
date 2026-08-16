@@ -9,7 +9,7 @@ export default {
   'app.newPrograms': '{count}个新程序',
   'app.footer.findProject': '在找 xe1010ce20 的项目吗？',
   'app.footer.friendLink': '友谊链接',
-  'app.version': 'v2.2.1',
+  'app.version': 'v2.3.0',
 
   // Toolbar
   'toolbar.new': '新建',
@@ -144,7 +144,7 @@ export default {
   'market.otherModelLabel': '其他机型',
   'market.otherModelPlaceholder': '请输入其他机型',
   'market.description': '描述',
-  'market.descriptionPlaceholder': '可选描述',
+  'market.descriptionPlaceholder': '请输入程序描述...',
   'market.confirmPublish': '确认发布',
   'market.required': '*',
   'market.publishSuccess': '发布成功',
@@ -157,6 +157,14 @@ export default {
   'market.selectModel': '请选择机型',
   'market.enterDesc': '请输入文件描述',
   'market.noFileData': '当前文件数据为空',
+  'market.challengeTitle': '内行验证',
+  'market.challengeHint': '为防止垃圾信息或机器人提交，请输入 fx-991CNX VerF ROM 中 {offset} 处的两个字节，并以十六进制输入（例: 1A2B），以证明你是圈内成员。',
+  'market.challengePlaceholder': '两字节十六进制',
+  'market.challengeLoading': '正在获取验证题目...',
+  'market.challengeLoadFailed': '获取验证题目失败，请稍后重试',
+  'market.challengeInvalid': '请输入 4 位十六进制的两字节答案',
+  'market.challengeWrong': '验证失败：字节错误，已更换新题目',
+  'market.challengeExpired': '验证题目已过期，已更换新题目',
 
   // Language Switcher
   'lang.switch': '切换语言',
