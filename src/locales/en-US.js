@@ -3,6 +3,8 @@ export default {
   'app.title': 'RopIDE',
   'app.welcome': 'Welcome to RopIDE',
   'app.welcomeInfo': 'Start a new project or open an existing one',
+  'app.discontinued.title': '⚠ This project is now semi-discontinued',
+  'app.discontinued.desc': 'Please consider using Yaing-Yan\'s VSCode plugin instead',
   'app.newFile': 'New File',
   'app.openFile': 'Open File',
   'app.market': 'Market',

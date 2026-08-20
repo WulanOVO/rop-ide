@@ -29,6 +29,40 @@ html {
   overflow: auto;
   text-align: center;
 
+  .discontinuedBanner {
+    max-width: 520px;
+    margin-bottom: 24px;
+    padding: 14px 20px;
+    background: #fff3bf;
+    border: 2px solid #f5c542;
+    border-radius: 8px;
+    text-align: center;
+
+    .discontinuedTitle {
+      font-size: 1.05em;
+      font-weight: 700;
+      color: #8a5d00;
+      margin: 0 0 6px;
+    }
+
+    .discontinuedDesc {
+      font-size: 0.9em;
+      color: #6b4e00;
+      margin: 0;
+      line-height: 1.5;
+
+      a {
+        color: #0366d6;
+        text-decoration: none;
+        font-weight: 500;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
   h1 {
     font-family: serif;
     font-size: 2.5em;

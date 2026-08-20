@@ -505,6 +505,20 @@ export default function App() {
         )}
 
         <div className={style.welcomeContainer}>
+          <div className={style.discontinuedBanner}>
+            <p className={style.discontinuedTitle}>{t('app.discontinued.title')}</p>
+            <p className={style.discontinuedDesc}>
+              {t('app.discontinued.desc')}
+              <br />
+              <a
+                href="https://github.com/Yaing-Yan/ropide-vscode-plugin/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Yaing-Yan/ropide-vscode-plugin
+              </a>
+            </p>
+          </div>
           <h1>{t('app.welcome')}</h1>
           <p className={style.welcomeInfo}>
             {t('app.welcomeInfo')}
