@@ -11,7 +11,7 @@ export default {
   'app.newPrograms': '{count}个新程序',
   'app.footer.findProject': '在找 xe1010ce20 的项目吗？',
   'app.footer.friendLink': '友谊链接',
-  'app.version': 'v2.3.0',
+  'app.version': 'v2.4.0',
 
   // Toolbar
   'toolbar.new': '新建',
@@ -131,7 +131,7 @@ export default {
   'market.close': '关闭',
   'market.loading': '加载中...',
   'market.empty': '暂无在线文件',
-  'market.featured': '⭐ 精选程序',
+  'market.featured': '精选程序',
   'market.normal': '普通程序',
   'market.download': '下载',
   'market.author': '作者: {author}',
@@ -167,6 +167,18 @@ export default {
   'market.challengeInvalid': '请输入 4 位十六进制的两字节答案',
   'market.challengeWrong': '验证失败：字节错误，已更换新题目',
   'market.challengeExpired': '验证题目已过期，已更换新题目',
+  'market.comments': '评论',
+  'market.noComments': '暂无评论，来写第一条吧',
+  'market.commentAuthorPlaceholder': '昵称',
+  'market.commentContentPlaceholder': '写下你的评论...',
+  'market.newComment': '新建评论',
+  'market.cancelComment': '取消',
+  'market.submitComment': '发表评论',
+  'market.commentAuthorRequired': '请输入昵称',
+  'market.commentContentRequired': '请输入评论内容',
+  'market.commentSubmitSuccess': '评论发表成功',
+  'market.commentSubmitFailed': '评论发表失败',
+  'market.commentLoadFailed': '获取评论失败',
 
   // Language Switcher
   'lang.switch': '切换语言',

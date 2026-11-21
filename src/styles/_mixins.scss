@@ -66,6 +66,16 @@
   }
 }
 
+@mixin button-cancel {
+  @include button-base;
+  background-color: v.$gray-300;
+  color: v.$gray-800;
+
+  &:hover {
+    background-color: v.$gray-400;
+  }
+}
+
 @mixin input-base {
   width: 100%;
   padding: 6px 8px;

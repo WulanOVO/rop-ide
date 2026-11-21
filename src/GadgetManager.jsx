@@ -327,8 +327,8 @@ export default function GadgetManager({
   }, [localGadgets]);
 
   return (
-    <div className={style.overlay} onClick={onClose}>
-      <div className={style.managerPanel} onClick={(e) => e.stopPropagation()}>
+    <div className={style.overlay}>
+      <div className={style.managerPanel}>
         <div className={style.header}>
           <h2>{t('gadget.title')}</h2>
           <div className={style.panelActions}>
@@ -351,9 +351,13 @@ export default function GadgetManager({
               <Svg size={16} icon="add" />
               {t('gadget.add')}
             </button>
-            <button onClick={onClose} className={style.closeButton}>
-              <Svg size={16} icon="close" />
-              {t('gadget.close')}
+            <button
+              onClick={onClose}
+              className={style.closeButton}
+              title={t('gadget.close')}
+              aria-label={t('gadget.close')}
+            >
+              <Svg size={18} icon="close" />
             </button>
           </div>
         </div>

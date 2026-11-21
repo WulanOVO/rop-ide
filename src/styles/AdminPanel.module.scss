@@ -48,6 +48,12 @@
 .buttonGroup {
   display: flex;
   gap: 8px;
+
+  .cancelButton {
+    @include m.button-cancel;
+    border: none;
+    padding: 4px 8px;
+  }
 }
 
 .loginForm {

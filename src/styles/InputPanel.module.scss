@@ -32,6 +32,7 @@
       padding: 0.75rem;
       font-family: v.$font-family-monospace;
       font-size: 1rem;
+      line-height: 1.2;
       white-space: pre;
       pointer-events: none;
 
@@ -119,6 +120,7 @@
     color: transparent;
     font-family: v.$font-family-monospace;
     font-size: 1rem;
+    line-height: 1.2;
     white-space: pre;
     resize: none;
     caret-color: v.$black;

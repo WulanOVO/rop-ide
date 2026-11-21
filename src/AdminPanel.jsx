@@ -218,7 +218,12 @@ export default function AdminPanel() {
           </div>
           <div className={style.buttonGroup}>
             <button onClick={() => handleSave(editingFile)}>{t('admin.save')}</button>
-            <button onClick={() => setEditingFile(null)}>{t('admin.cancel')}</button>
+            <button
+              className={style.cancelButton}
+              onClick={() => setEditingFile(null)}
+            >
+              {t('admin.cancel')}
+            </button>
           </div>
         </div>
       )}

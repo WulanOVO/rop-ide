@@ -10,40 +10,70 @@ const normalizeName = (name, t) => {
   return name.replace(/\.rop$/i, '');
 };
 
-const MarketCard = ({ item, isFeatured, onDownload, downloadingId, t }) => {
+const formatTime = (timestamp) =>
+  timestamp
+    ? new Date(timestamp).toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '-';
+
+const DownloadIcon = ({ size }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 3v10.5" />
+    <path d="M7.5 9 12 13.5 16.5 9" />
+    <path d="M4.5 17v3.5h15V17" />
+  </svg>
+);
+
+const MarketCard = ({ item, isFeatured, onDownload, onOpen, downloadingId, t }) => {
   return (
-    <div className={`${style.marketCard} ${isFeatured ? style.featured : ''}`}>
+    <div
+      className={`${style.marketCard} ${isFeatured ? style.featured : ''}`}
+      onClick={() => onOpen(item)}
+    >
       <div className={style.cardHeader}>
         <div className={style.cardInfo}>
-          <div className={style.cardTitle}>
-            {item.name}
-            {isFeatured && <span className={style.featuredStar}>★</span>}
-          </div>
+          <div className={style.cardTitle}>{item.name}</div>
           <div className={style.cardMeta}>
             <span className={style.cardAuthor}>{t('market.author', { author: item.author })}</span>
             <span className={style.cardModel}>{t('market.modelLabel', { model: item.model })}</span>
           </div>
         </div>
         <button
-          onClick={() => onDownload(item)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDownload(item);
+          }}
           className={style.downloadBtn}
           disabled={downloadingId === item.id}
+          title={t('market.download')}
+          aria-label={t('market.download')}
         >
-          {t('market.download')}
+          <DownloadIcon size={18} />
         </button>
       </div>
       {item.description && <div className={style.cardDesc}>{item.description}</div>}
-      <span className={style.cardTime}>
-        {item.timestamp
-          ? new Date(item.timestamp).toLocaleString(undefined, {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : '-'}
-      </span>
+      <div className={style.cardFooter}>
+        <span className={style.cardComments}>
+          <Svg size={14} icon="comment" />
+          {item.commentCount || 0}
+        </span>
+        <span className={style.cardTime}>{formatTime(item.timestamp)}</span>
+      </div>
     </div>
   );
 };
@@ -73,6 +103,13 @@ export default function MarketPanel({
   const [challenge, setChallenge] = useState(null);
   const [challengeAnswer, setChallengeAnswer] = useState('');
   const [challengeLoading, setChallengeLoading] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentAuthor, setCommentAuthor] = useState('');
+  const [commentContent, setCommentContent] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [showCommentForm, setShowCommentForm] = useState(false);
 
   const loadMarketList = async () => {
     setLoading(true);
@@ -123,6 +160,7 @@ export default function MarketPanel({
     setPublishName(normalizeName(currentFileName, t));
     setPublishDescription('');
     setShowPublishModal(false);
+    setDetailItem(null);
   }, [show, currentFileName, t]);
 
   const filteredItems = useMemo(() => {
@@ -255,11 +293,78 @@ export default function MarketPanel({
     }
   };
 
+  const loadComments = async (fileId) => {
+    setCommentsLoading(true);
+    try {
+      const res = await fetch(`/api/comments?fileId=${fileId}`);
+      if (!res.ok) {
+        throw new Error(t('market.commentLoadFailed'));
+      }
+      const data = await res.json();
+      setComments(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setComments([]);
+      addMessage(e.message || t('market.commentLoadFailed'), 'error');
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const openDetail = (item) => {
+    setDetailItem(item);
+    setComments([]);
+    setCommentContent('');
+    setShowCommentForm(false);
+    loadComments(item.id);
+  };
+
+  const closeDetail = () => setDetailItem(null);
+
+  const handleSubmitComment = async () => {
+    if (!detailItem) return;
+    const author = commentAuthor.trim();
+    const content = commentContent.trim();
+    if (!author) {
+      addMessage(t('market.commentAuthorRequired'), 'error');
+      return;
+    }
+    if (!content) {
+      addMessage(t('market.commentContentRequired'), 'error');
+      return;
+    }
+    setSubmittingComment(true);
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId: detailItem.id, author, content }),
+      });
+      if (!res.ok) {
+        throw new Error(t('market.commentSubmitFailed'));
+      }
+      const created = await res.json();
+      setComments((prev) => [created, ...prev]);
+      setCommentContent('');
+      setShowCommentForm(false);
+      const bump = (item) =>
+        item.id === detailItem.id
+          ? { ...item, commentCount: (item.commentCount || 0) + 1 }
+          : item;
+      setItems((prev) => prev.map(bump));
+      setDetailItem((prev) => (prev ? bump(prev) : prev));
+      addMessage(t('market.commentSubmitSuccess'), 'info');
+    } catch (e) {
+      addMessage(e.message || t('market.commentSubmitFailed'), 'error');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
   if (!show) return null;
 
   return (
-    <div className={style.overlay} onClick={onClose}>
-      <div className={style.marketPanel} onClick={(e) => e.stopPropagation()}>
+    <div className={style.overlay}>
+      <div className={style.marketPanel}>
         <div className={style.header}>
           <h2>{t('market.title')}</h2>
           <div className={style.panelActions}>
@@ -281,9 +386,13 @@ export default function MarketPanel({
                 {t('market.publish')}
               </button>
             )}
-            <button onClick={onClose} className={style.closeButton}>
-              <Svg size={16} icon="close" />
-              {t('market.close')}
+            <button
+              onClick={onClose}
+              className={style.closeButton}
+              title={t('market.close')}
+              aria-label={t('market.close')}
+            >
+              <Svg size={18} icon="close" />
             </button>
           </div>
         </div>
@@ -307,6 +416,7 @@ export default function MarketPanel({
                   item={item}
                   isFeatured={true}
                   onDownload={handleDownload}
+                  onOpen={openDetail}
                   downloadingId={downloadingId}
                   t={t}
                 />
@@ -334,6 +444,7 @@ export default function MarketPanel({
                   item={item}
                   isFeatured={false}
                   onDownload={handleDownload}
+                  onOpen={openDetail}
                   downloadingId={downloadingId}
                   t={t}
                 />
@@ -344,22 +455,17 @@ export default function MarketPanel({
       </div>
 
       {showPublishModal && (
-        <div
-          className={style.publishOverlay}
-          onClick={() => setShowPublishModal(false)}
-        >
-          <div
-            className={style.publishModal}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className={style.publishOverlay}>
+          <div className={style.publishModal}>
             <div className={style.publishHeader}>
               <h3>{t('market.publishTitle')}</h3>
               <button
                 className={style.closeButton}
                 onClick={() => setShowPublishModal(false)}
+                title={t('market.close')}
+                aria-label={t('market.close')}
               >
-                <Svg size={16} icon="close" />
-                {t('market.close')}
+                <Svg size={18} icon="close" />
               </button>
             </div>
             <div className={style.publishBody}>
@@ -461,7 +567,7 @@ export default function MarketPanel({
             <div className={style.publishActions}>
               <button
                 onClick={() => setShowPublishModal(false)}
-                className={style.secondaryButton}
+                className={style.cancelButton}
               >
                 {t('admin.cancel')}
               </button>
@@ -472,6 +578,119 @@ export default function MarketPanel({
               >
                 {t('market.confirmPublish')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailItem && (
+        <div className={style.publishOverlay}>
+          <div className={`${style.publishModal} ${style.detailModal}`}>
+            <div className={style.publishHeader}>
+              <h3 className={style.detailTitle}>{detailItem.name}</h3>
+              <button
+                className={style.closeButton}
+                onClick={closeDetail}
+                title={t('market.close')}
+                aria-label={t('market.close')}
+              >
+                <Svg size={18} icon="close" />
+              </button>
+            </div>
+
+            <div className={style.detailMeta}>
+              <span>{t('market.author', { author: detailItem.author })}</span>
+              <span>{t('market.modelLabel', { model: detailItem.model })}</span>
+            </div>
+
+            {detailItem.description && (
+              <div className={style.detailDesc}>{detailItem.description}</div>
+            )}
+
+            <div className={style.detailTime}>
+              {formatTime(detailItem.timestamp)}
+            </div>
+
+            <div className={style.commentsSection}>
+              <div className={style.commentsHeader}>
+                <Svg size={16} icon="comment" />
+                <span>{`${t('market.comments')} (${detailItem.commentCount || 0})`}</span>
+              </div>
+
+              <div className={style.commentList}>
+                {commentsLoading ? (
+                  <div className={style.commentsEmpty}>
+                    {t('market.loading')}
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className={style.commentsEmpty}>
+                    {t('market.noComments')}
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <div key={comment.id} className={style.commentItem}>
+                      <div className={style.commentTop}>
+                        <span className={style.commentAuthor}>
+                          {comment.author}
+                        </span>
+                        <span className={style.commentTime}>
+                          {formatTime(comment.timestamp)}
+                        </span>
+                      </div>
+                      <div className={style.commentContent}>
+                        {comment.content}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {showCommentForm ? (
+                <div className={style.commentForm}>
+
+                  <input
+                    type="text"
+                    className={style.formInput}
+                    value={commentAuthor}
+                    onChange={(e) => setCommentAuthor(e.target.value)}
+                    placeholder={t('market.commentAuthorPlaceholder')}
+                    maxLength={50}
+                  />
+                  <textarea
+                    className={style.formTextarea}
+                    value={commentContent}
+                    onChange={(e) => setCommentContent(e.target.value)}
+                    placeholder={t('market.commentContentPlaceholder')}
+                    rows={3}
+                    maxLength={1000}
+                  />
+                  <div className={style.commentFormActions}>
+                    <button
+                      className={style.cancelButton}
+                      onClick={() => setShowCommentForm(false)}
+                    >
+                      {t('market.cancelComment')}
+                    </button>
+                    <button
+                      className={style.primaryButton}
+                      onClick={handleSubmitComment}
+                      disabled={submittingComment}
+                    >
+                      {t('market.submitComment')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={style.commentFormActions}>
+                  <button
+                    className={style.primaryButton}
+                    onClick={() => setShowCommentForm(true)}
+                  >
+                    <Svg size={16} icon="add" />
+                    {t('market.newComment')}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

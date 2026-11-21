@@ -89,12 +89,7 @@
     margin-left: 10px;
 
     &:first-child {
-      background-color: #ddd;
-      color: v.$gray-800; // #333
-
-      &:hover {
-        background-color: #ccc;
-      }
+      @include m.button-cancel;
     }
 
     &:last-child {

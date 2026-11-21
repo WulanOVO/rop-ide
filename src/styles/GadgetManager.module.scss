@@ -127,8 +127,13 @@
     }
 
     .cancelButton {
-      background-color: v.$secondary;
-      color: v.$white;
+      background-color: v.$gray-300;
+      color: v.$gray-800;
+
+      &:hover {
+        background-color: v.$gray-400;
+        opacity: 1;
+      }
     }
   }
 
@@ -295,9 +300,14 @@
 }
 
 .closeButton {
-  @include m.button-variant(v.$gray-500);
+  @include m.button-base;
+  padding: 6px;
+  background: transparent;
+  color: v.$gray-600;
+  line-height: 0;
 
-  .icon {
-    display: block;
+  &:hover {
+    background-color: v.$gray-300;
+    opacity: 1;
   }
 }

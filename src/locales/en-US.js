@@ -11,7 +11,7 @@ export default {
   'app.newPrograms': '{count} new',
   'app.footer.findProject': 'Looking for xe1010ce20\'s project?',
   'app.footer.friendLink': 'Friend Link',
-  'app.version': 'v2.3.0',
+  'app.version': 'v2.4.0',
 
   // Toolbar
   'toolbar.new': 'New',
@@ -131,7 +131,7 @@ export default {
   'market.close': 'Close',
   'market.loading': 'Loading...',
   'market.empty': 'No online files',
-  'market.featured': '⭐ Featured Programs',
+  'market.featured': 'Featured Programs',
   'market.normal': 'Normal Programs',
   'market.download': 'Download',
   'market.author': 'Author: {author}',
@@ -167,6 +167,18 @@ export default {
   'market.challengeInvalid': 'Please enter a 4-digit hex answer',
   'market.challengeWrong': 'Verification failed: wrong bytes, a new challenge was issued',
   'market.challengeExpired': 'Challenge expired, a new one was issued',
+  'market.comments': 'Comments',
+  'market.noComments': 'No comments yet. Be the first!',
+  'market.commentAuthorPlaceholder': 'Nickname',
+  'market.commentContentPlaceholder': 'Write your comment...',
+  'market.newComment': 'New Comment',
+  'market.cancelComment': 'Cancel',
+  'market.submitComment': 'Post Comment',
+  'market.commentAuthorRequired': 'Please enter a nickname',
+  'market.commentContentRequired': 'Please enter your comment',
+  'market.commentSubmitSuccess': 'Comment posted',
+  'market.commentSubmitFailed': 'Failed to post comment',
+  'market.commentLoadFailed': 'Failed to load comments',
 
   // Language Switcher
   'lang.switch': 'Switch Language',
