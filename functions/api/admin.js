@@ -13,6 +13,17 @@ export const onRequestGet = async (context) => {
   }
 
   try {
+    const url = new URL(request.url);
+
+    if (url.searchParams.get('comments') === 'true') {
+      const { results } = await env.DB.prepare(
+        `SELECT c.id, c.file_id, c.content, c.author, c.timestamp, f.name AS fileName
+         FROM comments c LEFT JOIN files f ON f.id = c.file_id
+         ORDER BY c.timestamp DESC`,
+      ).all();
+      return Response.json(results);
+    }
+
     const { results } = await env.DB.prepare(
       'SELECT * FROM files ORDER BY timestamp DESC',
     ).all();
@@ -92,15 +103,20 @@ export const onRequestDelete = async (context) => {
 
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
+  const commentId = url.searchParams.get('commentId');
 
-  if (!id) {
+  if (!id && !commentId) {
     return new Response('Missing id', { status: 400 });
   }
 
   try {
-    const info = await env.DB.prepare('DELETE FROM files WHERE id = ?')
-      .bind(id)
-      .run();
+    const info = commentId
+      ? await env.DB.prepare('DELETE FROM comments WHERE id = ?')
+          .bind(commentId)
+          .run()
+      : await env.DB.prepare('DELETE FROM files WHERE id = ?')
+          .bind(id)
+          .run();
 
     return Response.json(info);
   } catch (e) {

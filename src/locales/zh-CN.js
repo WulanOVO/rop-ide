@@ -67,6 +67,12 @@ export default {
   'admin.authFailed': '认证失败',
   'admin.deleteFailed': '删除失败',
   'admin.saveFailed': '保存失败',
+  'admin.comments': '评论管理',
+  'admin.commentFile': '所属程序',
+  'admin.commentContent': '评论内容',
+  'admin.noComments': '暂无评论',
+  'admin.confirmDeleteComment': '确定删除这条评论？',
+  'admin.commentLoadFailed': '获取评论失败',
 
   // InputPanel
   'input.placeholder': '输入ROP代码...',

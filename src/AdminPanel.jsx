@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import style from './styles/AdminPanel.module.scss';
 import { useTranslation } from './i18n';
 
@@ -7,32 +7,37 @@ export default function AdminPanel() {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [files, setFiles] = useState([]);
+  const [comments, setComments] = useState([]);
   const [editingFile, setEditingFile] = useState(null);
   const [error, setError] = useState('');
-
-  const secretRemove = useRef([]);
 
   useEffect(() => {
     document.title = t('admin.title');
   }, [t]);
 
+  const fetchComments = async (authPassword) => {
+    const res = await fetch('/api/admin?comments=true', {
+      headers: { Authorization: `Bearer ${authPassword}` },
+    });
+    if (!res.ok) throw new Error(t('admin.commentLoadFailed'));
+    setComments(await res.json());
+  };
+
   const fetchFiles = async () => {
     try {
-      let processedPassword = password;
-
-      for (const index of secretRemove.current) {
-        processedPassword = processedPassword.slice(0, index) + processedPassword.slice(index + 1);
-      }
-      secretRemove.current = [];
-
       const res = await fetch('/api/admin', {
-        headers: { Authorization: `Bearer ${processedPassword}` },
+        headers: { Authorization: `Bearer ${password}` },
       });
       if (!res.ok) throw new Error(t('admin.authFailed'));
       const data = await res.json();
       setFiles(data);
       setIsAuthenticated(true);
       setError('');
+      try {
+        await fetchComments(password);
+      } catch (e) {
+        setError(e.message);
+      }
     } catch (e) {
       setError(e.message);
     }
@@ -52,6 +57,20 @@ export default function AdminPanel() {
       });
       if (!res.ok) throw new Error(t('admin.deleteFailed'));
       fetchFiles();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const handleDeleteComment = async (id) => {
+    if (!confirm(t('admin.confirmDeleteComment'))) return;
+    try {
+      const res = await fetch(`/api/admin?commentId=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${password}` },
+      });
+      if (!res.ok) throw new Error(t('admin.deleteFailed'));
+      setComments((prev) => prev.filter((comment) => comment.id !== id));
     } catch (e) {
       setError(e.message);
     }
@@ -86,11 +105,6 @@ export default function AdminPanel() {
             placeholder={t('admin.password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Control') {
-                secretRemove.current.push(e.target.selectionStart);
-              }
-            }}
           />
           <button type="submit">{t('admin.enter')}</button>
         </form>
@@ -146,6 +160,44 @@ export default function AdminPanel() {
                 </td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3>{t('admin.comments')}</h3>
+      <div className={style.tableContainer}>
+        <table className={style.table}>
+          <thead>
+            <tr>
+              <th>{t('admin.id')}</th>
+              <th>{t('admin.commentFile')}</th>
+              <th>{t('admin.author')}</th>
+              <th>{t('admin.commentContent')}</th>
+              <th>{t('admin.time')}</th>
+              <th>{t('admin.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {comments.length === 0 ? (
+              <tr>
+                <td colSpan="6">{t('admin.noComments')}</td>
+              </tr>
+            ) : (
+              comments.map((comment) => (
+                <tr key={comment.id}>
+                  <td>{comment.id}</td>
+                  <td>{comment.fileName || comment.file_id}</td>
+                  <td>{comment.author}</td>
+                  <td>{comment.content}</td>
+                  <td>{new Date(comment.timestamp).toLocaleString()}</td>
+                  <td>
+                    <button onClick={() => handleDeleteComment(comment.id)}>
+                      {t('admin.delete')}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

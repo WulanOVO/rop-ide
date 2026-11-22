@@ -2,24 +2,6 @@ import { ROM_B64, CHALLENGE_SECRET } from './romData.js';
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 
-let commentsTableReady = false;
-const ensureCommentsTable = async (env) => {
-  if (commentsTableReady) return;
-  await env.DB.prepare(
-    `CREATE TABLE IF NOT EXISTS comments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      file_id INTEGER NOT NULL,
-      author TEXT NOT NULL,
-      content TEXT NOT NULL,
-      timestamp INTEGER NOT NULL
-    )`,
-  ).run();
-  await env.DB.prepare(
-    'CREATE INDEX IF NOT EXISTS idx_comments_file ON comments (file_id)',
-  ).run();
-  commentsTableReady = true;
-};
-
 let romCache = null;
 const getRom = () => {
   if (!romCache) {
@@ -138,8 +120,6 @@ export const onRequestGet = async (context) => {
 
       return Response.json(results);
     }
-
-    await ensureCommentsTable(env);
 
     const { results } = await env.DB.prepare(
       `SELECT f.id, f.name, f.timestamp, f.author, f.model, f.description, f.featured,

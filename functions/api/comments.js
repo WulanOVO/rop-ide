@@ -1,22 +1,3 @@
-let tableReady = false;
-
-const ensureCommentsTable = async (env) => {
-  if (tableReady) return;
-  await env.DB.prepare(
-    `CREATE TABLE IF NOT EXISTS comments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      file_id INTEGER NOT NULL,
-      author TEXT NOT NULL,
-      content TEXT NOT NULL,
-      timestamp INTEGER NOT NULL
-    )`,
-  ).run();
-  await env.DB.prepare(
-    'CREATE INDEX IF NOT EXISTS idx_comments_file ON comments (file_id)',
-  ).run();
-  tableReady = true;
-};
-
 const MAX_AUTHOR_LENGTH = 50;
 const MAX_CONTENT_LENGTH = 1000;
 
@@ -29,7 +10,6 @@ export const onRequestGet = async ({ request, env }) => {
   }
 
   try {
-    await ensureCommentsTable(env);
     const { results } = await env.DB.prepare(
       'SELECT * FROM comments WHERE file_id = ? ORDER BY timestamp DESC',
     )
@@ -58,8 +38,6 @@ export const onRequestPost = async ({ request, env }) => {
     if (author.length > MAX_AUTHOR_LENGTH || content.length > MAX_CONTENT_LENGTH) {
       return new Response('Content too long', { status: 400 });
     }
-
-    await ensureCommentsTable(env);
 
     const file = await env.DB.prepare('SELECT id FROM files WHERE id = ?')
       .bind(fileId)

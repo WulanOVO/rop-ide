@@ -67,6 +67,12 @@ export default {
   'admin.authFailed': 'Authentication failed',
   'admin.deleteFailed': 'Delete failed',
   'admin.saveFailed': 'Save failed',
+  'admin.comments': 'Comments',
+  'admin.commentFile': 'Program',
+  'admin.commentContent': 'Content',
+  'admin.noComments': 'No comments',
+  'admin.confirmDeleteComment': 'Delete this comment?',
+  'admin.commentLoadFailed': 'Failed to load comments',
 
   // InputPanel
   'input.placeholder': 'Enter ROP code...',
