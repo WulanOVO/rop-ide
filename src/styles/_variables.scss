@@ -32,9 +32,18 @@ $bg-light: #f4f4f4;
 $bg-lighter: #f6f6f6;
 $border-color: #ccc;
 
+// 特殊处理中文，使用无衬线字体
+@font-face {
+  font-family: CjkSans;
+  src:
+    local('PingFang SC'), local('Hiragino Sans GB'), local('Microsoft YaHei'),
+    local('SimHei'), local('Noto Sans CJK SC'), local('WenQuanYi Micro Hei');
+  unicode-range: U+4E00-9FFF, U+3400-4DBF, U+20000-2A6DF;
+}
+
 // Typography
 $font-family-base: Arial, sans-serif;
-$font-family-monospace: "consolas", sans-serif;
+$font-family-monospace: CjkSans, 'Consolas', monospace;
 $font-size-base: 16px;
 $font-size-sm: 0.9em;
 $font-size-xs: 0.85em;
